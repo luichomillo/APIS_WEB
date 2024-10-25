@@ -11,8 +11,8 @@ const cookies = require("cookie-parser");
 const app = express();
 
 const PORT = process.env.PORT || 3001; // Usa el puerto de Render o el 3001 como respaldo
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Servidor escuchando en el puerto ${PORT}`);
+app.listen(PORT, () => {
+  console.log(`Servidor escuchando en el puerto ${PORT}`);
 });
 
 // Cargar los certificados SSL
