@@ -1,9 +1,16 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Habilitar CORS para tu dominio
+app.use(cors({
+    origin: 'https://luichomillo.freeddns.org', // Reemplaza esto con tu dominio
+    credentials: true // Permitir el uso de cookies si es necesario
+}));
 
 // Configura el middleware para poder recibir datos en JSON
 app.use(express.json());
