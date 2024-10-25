@@ -95,7 +95,7 @@ app.post('/api/register-connection', (req, res) => {
 });
 // *** CONTADOR DE CONEXIONES ***
 app.get('/api/connections', (req, res) => {
-	const { conexiones } = req.body;
+	// const { conexiones } = req.body;
 
 	let fecha = new Date();
 	let formattedDate = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getDate().toString().padStart(2, '0')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
@@ -107,7 +107,8 @@ app.get('/api/connections', (req, res) => {
 	        return res.status(500).json({ success: false, error: 'Error en el servidor' });
 		console.log("error api/connections");
 	    }
-	    // return res.json({ connections: row.connections });
+	    return res.json({ connections: row.connections });
+		
 	    // si cantidad nueva es distinta de la anterior la modifico en Firebase
 	    //console.log("conn ant.", conexiones, "conn actual", row.connections );
 	    //if (row.connections!=conexiones) {
@@ -127,17 +128,18 @@ app.get('/api/connections', (req, res) => {
 
 // *** CONTADOR DE VISTAS TOTALES ***
 app.get('/api/views', (req, res) => {
-	const { vistas } = req.body;
+	// const { vistas } = req.body;
 
 	let fecha = new Date();
 	let formattedDate = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getDate().toString().padStart(2, '0')}`;
 
     db.get('SELECT COUNT(*) AS views FROM USUARIOS WHERE DATE(Fecha_VIVO) = ?', [formattedDate], (err, row) => {
-    if (err) {
-        console.error('Error al obtener vistas:', err.message);  // Verificar errores
-        return res.status(500).json({ success: false, error: 'Error en el servidor' });
-    }
-    // return res.json({ views: row.views });
+    	if (err) {
+        	console.error('Error al obtener vistas:', err.message);  // Verificar errores
+        	return res.status(500).json({ success: false, error: 'Error en el servidor' });
+    	}
+    	return res.json({ views: row.views });
+	    
 	// si cantidad nueva es distinta de la anterior la modifico en Firebase
 	//    console.log("vistas ant.", vistas, "vistas actual", row.views );
 	//    if (row.views!=vistas) {
