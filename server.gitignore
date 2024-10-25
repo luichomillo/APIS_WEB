@@ -1,0 +1,12 @@
+# Ignorar el archivo de configuración con credenciales
+*.json
+*.env
+luichomillo-28552-firebase-adminsdk-vetvx-450b2b4cb1.json
+
+# Ignorar las carpetas de dependencias (ej. node_modules)
+node_modules/
+
+# Ignorar archivos temporales
+*.log
+*.tmp
+
