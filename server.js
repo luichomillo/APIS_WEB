@@ -114,6 +114,7 @@ app.get('/api/connections', (req, res) => {
 	        return res.status(500).json({ success: false, error: 'Error en el servidor' });
 		console.log("error api/connections");
 	    }
+	    console.log("Conns: ", row.connections);
 	    return res.json({ connections: row.connections });
 		
 	    // si cantidad nueva es distinta de la anterior la modifico en Firebase
@@ -145,7 +146,8 @@ app.get('/api/views', (req, res) => {
         	console.error('Error al obtener vistas:', err.message);  // Verificar errores
         	return res.status(500).json({ success: false, error: 'Error en el servidor' });
     	}
-    	return res.json({ views: row.views });
+    	console.log("views: ", row.views);
+	return res.json({ views: row.views });
 	    
 	// si cantidad nueva es distinta de la anterior la modifico en Firebase
 	//    console.log("vistas ant.", vistas, "vistas actual", row.views );
