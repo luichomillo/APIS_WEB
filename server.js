@@ -109,11 +109,11 @@ app.get('/api/connections', (req, res) => {
 	    }
 	    // return res.json({ connections: row.connections });
 	    // si cantidad nueva es distinta de la anterior la modifico en Firebase
-	    console.log("conn ant.", conexiones, "conn actual", row.connections );
-	    if (row.connections!=conexiones) {
-		    CONN.set({ CANT: row.connections }, { merge: true })  // Actualizar el campo 'CANT' API/CONNECTIONS en Firebase
-		    console.log("connections enviadas a FIREBASE:",row.connections );
-	    };	
+	    //console.log("conn ant.", conexiones, "conn actual", row.connections );
+	    //if (row.connections!=conexiones) {
+	    //	    CONN.set({ CANT: row.connections }, { merge: true })  // Actualizar el campo 'CANT' API/CONNECTIONS en Firebase
+	    //	    console.log("connections enviadas a FIREBASE:",row.connections );
+	    // };	
 	});
 	
 	// *** ACA VOY A CONTROLAR CUANTO TIEMPO LLEVAN SIN HACER EL PING, MAS DE 10' LO DESCONECTO ***
@@ -139,11 +139,11 @@ app.get('/api/views', (req, res) => {
     }
     // return res.json({ views: row.views });
 	// si cantidad nueva es distinta de la anterior la modifico en Firebase
-	    console.log("vistas ant.", vistas, "vistas actual", row.views );
-	    if (row.views!=vistas) {
-		    VIEWS.set({ CANT: row.views }, { merge: true })  // Actualizar el campo 'CANT' API/VIEWS en Firebase
-		    console.log("views enviados a FIREBASE:", row.views );
-		};
+	//    console.log("vistas ant.", vistas, "vistas actual", row.views );
+	//    if (row.views!=vistas) {
+	//	    VIEWS.set({ CANT: row.views }, { merge: true })  // Actualizar el campo 'CANT' API/VIEWS en Firebase
+	//	    console.log("views enviados a FIREBASE:", row.views );
+	//	};
 	});
 
 // *** Ruta para desconectar a un usuario ***
