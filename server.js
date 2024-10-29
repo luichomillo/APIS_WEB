@@ -237,3 +237,32 @@ app.post('/api/logout', (req, res) => {
         }
     });
 });
+
+// *** CHAT ***
+app.post('/api/chat/send', (req, res) => {
+    const { user, message } = req.body;
+
+    if (!user || !message) {
+        return res.status(400).json({ error: 'Usuario y mensaje son necesarios' });
+    }
+
+    const messageData = {
+        user,
+        message,
+        timestamp: admin.firestore.Timestamp.now()
+    };
+
+    admin.firestore().collection('messages').add(messageData)
+        .then(() => res.json({ success: true, message: 'Mensaje enviado' }))
+        .catch((error) => res.status(500).json({ error: error.message }));
+});
+
+app.get('/api/chat/messages', (req, res) => {
+    admin.firestore().collection('messages').orderBy('timestamp', 'desc').limit(50).get()
+        .then(snapshot => {
+            const messages = [];
+            snapshot.forEach(doc => messages.push(doc.data()));
+            res.json(messages);
+        })
+        .catch(error => res.status(500).json({ error: error.message }));
+});
