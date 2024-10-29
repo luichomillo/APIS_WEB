@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 
 const admin = require("firebase-admin");
 
-const serviceAccount = require("D:/STREAMING/FIREBASE/luichomillo-28552-firebase-adminsdk-vetvx-3fe1b58789.json");
+var serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
