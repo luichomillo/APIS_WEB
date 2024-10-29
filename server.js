@@ -6,6 +6,15 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const admin = require("firebase-admin");
+
+const serviceAccount = require("D:/STREAMING/FIREBASE/luichomillo-28552-firebase-adminsdk-vetvx-3fe1b58789.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: "https://luichomillo-28552-default-rtdb.firebaseio.com"
+});
+
 // Habilitar CORS para tu dominio
 app.use(cors({
     origin: 'https://luichomillo.freeddns.org', // Reemplaza esto con tu dominio
