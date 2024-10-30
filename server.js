@@ -42,9 +42,9 @@ app.get('/', (req, res) => {
 app.get('/api/test', (req, res) => {
     db.all(`SELECT * FROM USUARIOS`, (err, rows) => {
         if (err) {
-            res.status(500).json({ error: err.message });
+            return res.status(500).json({ error: err.message });
         } else {
-            res.json({ success: true, data: rows });
+            return res.json({ success: true, data: rows });
         }
     });
 });
