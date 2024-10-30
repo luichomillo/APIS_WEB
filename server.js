@@ -41,7 +41,7 @@ app.get('/', (req, res) => {
 // API de prueba para consultar la base de datos
 app.get('/api/test', (req, res) => {
     db.serialize(() => {
-        db.each(`SELECT COUNT(*) AS count FROM sqlite_master WHERE type='table'`, (err, row) => {
+        db.each(`SELECT * FROM USUARIOS`, (err, row) => {
             if (err) {
                 res.status(500).json({ error: err.message });
             } else {
