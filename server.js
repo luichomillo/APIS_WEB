@@ -40,15 +40,13 @@ app.get('/', (req, res) => {
 
 // API de prueba para consultar la base de datos
 app.get('/api/test', (req, res) => {
-    
-        db.all(`SELECT * FROM USUARIOS`, (err, row) => {
-            if (err) {
-                res.status(500).json({ error: err.message });
-            } else {
-                res.json({ "Usuarios: ", rows });
-            }
-        });
-    
+    db.all(`SELECT * FROM USUARIOS`, (err, rows) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+        } else {
+            res.json({ success: true, data: rows });
+        }
+    });
 });
 
 app.listen(PORT, () => {
