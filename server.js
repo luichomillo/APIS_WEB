@@ -352,3 +352,40 @@ mysqlConnection.connect((err) => {
     }
     console.log('Conexión a MySQL establecida');
 });
+
+app.get('/api/migrate-usuarios', (req, res) => {
+    // Consultar todos los usuarios desde SQLite
+    sqliteDb.all('SELECT USER, PASSW, HABILITADO, CATEGORIA, idUSER, IP_User, VIVO, Fecha_VIVO FROM Usuarios', (err, rows) => {
+        if (err) {
+            return res.status(500).json({ success: false, message: 'Error consultando SQLite', error: err.message });
+        }
+
+        // Insertar cada usuario en MySQL
+        rows.forEach(row => {
+            const query = `
+                INSERT INTO Usuarios (USER, PASSW, HABILITADO, CATEGORIA, idUSER, IP_User, VIVO, Fecha_VIVO)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE 
+                PASSW = VALUES(PASSW), HABILITADO = VALUES(HABILITADO), CATEGORIA = VALUES(CATEGORIA), 
+                IP_User = VALUES(IP_User), VIVO = VALUES(VIVO), Fecha_VIVO = VALUES(Fecha_VIVO)
+            `;
+
+            mysqlConnection.query(query, [
+                row.USER,
+                row.PASSW,
+                row.HABILITADO,
+                row.CATEGORIA,
+                row.idUSER,
+                row.IP_User,
+                row.VIVO,
+                row.Fecha_VIVO
+            ], (err) => {
+                if (err) {
+                    console.error('Error migrando usuario:', row.USER, err.message);
+                }
+            });
+        });
+
+        res.json({ success: true, message: 'Migración completa' });
+    });
+});
