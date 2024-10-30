@@ -170,24 +170,6 @@ app.get('/api/views', (req, res) => {
 	//	};
 	});
 
-// *** Ruta para desconectar a un usuario ***
-app.post('/api/disconnect', (req, res) => {
-    const { IP } = req.body;
-
-    if (!IP) {
-        return res.status(400).json({ success: false, error: 'IP no proporcionada' });
-    }
-
-    db.run(`UPDATE USUARIOS SET CONECTADO = FALSE WHERE IP_USER = ?`, [IP], function(err) {
-        if (err) {
-            return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
-        }
-        return res.json({ success: true });
-    });
-});
-
-});
-
 // *** PING AL USUARIO PARA VERIFICAR DESCONEXION ***
 app.post('/api/ping', (req, res) => {
     const { IP } = req.body;
@@ -202,47 +184,59 @@ app.post('/api/ping', (req, res) => {
             console.error('Error al actualizar Fecha_VIVO en el ping:', err.message);
             return res.status(500).json({ success: false, error: 'Error en el servidor' });
         }
+	console.log(`Ping exitoso para IP ${IP}`);
         return res.json({ success: true });
-	console.log("PING EXITOSO ", IP)
     });
 });
 
 // ****LOGOUT USUARIOS****
 app.post('/api/logout', (req, res) => {
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
-
-    const { IP } = req.query;  // IP viene en la query de la URL
-    console.log("IP logout: ", IP);
+    const { IP } = req.body;
 
     if (!IP) {
         return res.status(400).json({ success: false, error: 'IP no proporcionada' });
     }
 
-    db.get('SELECT * FROM USUARIOS WHERE IP_USER = ?', [IP], (err, row) => {
+    db.run(`UPDATE USUARIOS SET CONECTADO = FALSE, VIVO = FALSE WHERE IP_USER = ?`, [IP], function(err) {
         if (err) {
-            return res.status(500).json({ success: false, error: 'Error en el servidor' });
+            return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
         }
-
-        if (row) {
-            console.log("cierra sesión para Usuario: ", row.USER);
-
-            // Marcar al usuario como DESconectado
-            db.run(`UPDATE USUARIOS SET CONECTADO = FALSE WHERE IP_User = ?`, [IP], function (err) {
-                if (err) {
-                    return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
-                }
-
-                console.log("LOGOUT success true");
-                return res.json({ success: true });
-            });
-        } else {
-            console.log("Usuario no encontrado para la IP: ", IP);
-            return res.json({ success: false, error: 'Usuario no encontrado' });
-        }
+        console.log(`Usuario con IP ${IP} desconectado.`);
+        return res.json({ success: true, message: "Usuario desconectado correctamente" });
     });
 });
 
+// *** API para verificar y desconectar usuarios inactivos ***
+app.get('/api/verify-status', (req, res) => {
+    const sql = `
+        SELECT * FROM USUARIOS
+        WHERE (CONECTADO = TRUE OR VIVO = TRUE)
+        AND datetime(Fecha_VIVO) <= datetime('now', 'localtime', '-15 minutes')
+    `;
+
+    db.all(sql, (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+
+        if (rows.length > 0) {
+            const updateSql = `UPDATE USUARIOS SET CONECTADO = FALSE, VIVO = FALSE 
+                               WHERE (CONECTADO = TRUE OR VIVO = TRUE) 
+                               AND datetime(Fecha_VIVO) <= datetime('now', 'localtime', '-15 minutes')`;
+            db.run(updateSql, (updateErr) => {
+                if (updateErr) {
+                    return res.status(500).json({ error: updateErr.message });
+                }
+                console.log("Usuarios inactivos actualizados correctamente.");
+                return res.json({ success: true, message: "Usuarios inactivos desconectados", inactiveUsers: rows });
+            });
+        } else {
+            console.log("No hay usuarios inactivos");
+            return res.json({ success: true, message: "No hay usuarios inactivos" });
+        }
+    });
+});
+	
 // *** CHAT ***
 app.post('/api/chat/send', (req, res) => {
     const { user, message } = req.body;
