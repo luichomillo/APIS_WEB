@@ -324,9 +324,12 @@ app.post('/api/conectados', (req, res) => {
         }
         console.log("formattedDate: ", formattedDate, "rows: ", rows);
         // Filtrar por VIVO
-        const conectados = rows.filter(row => row.VIVO === true);
-        const noConectados = rows.filter(row => row.VIVO === false);
+        const conectados = rows.filter(row => row.VIVO === 1);
+        const noConectados = rows.filter(row => row.VIVO === 0);
+	
 	console.log("conectados: ", conectados);
+	console.log("noConectados: ", noConectados);
+	    
         return res.json({ success: true, conectados, noConectados });
     });
 });
