@@ -318,11 +318,11 @@ app.post('/api/conectados', (req, res) => {
     let formattedDate = `${fechaHoy.getFullYear()}-${(fechaHoy.getMonth() + 1).toString().padStart(2, '0')}-${fechaHoy.getDate().toString().padStart(2, '0')}`;
 
     // Consultar la base de datos
-    db.all(`SELECT * FROM USUARIOS WHERE Fecha_VIVO LIKE ? `, [`${formattedDate}%`], (err, rows) => {
+    db.all(`SELECT * FROM USUARIOS WHERE Fecha_VIVO = ? `, [ formattedDate ], (err, rows) => {
         if (err) {
             return res.status(500).json({ success: false, error: err.message });
         }
-        console.log("formattedDate: ", formattedDate, rows.count);
+        console.log("formattedDate: ", formattedDate, "rows: ", rows);
         // Filtrar por VIVO
         const conectados = rows.filter(row => row.VIVO === true);
         const noConectados = rows.filter(row => row.VIVO === false);
