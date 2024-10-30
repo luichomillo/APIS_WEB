@@ -318,7 +318,7 @@ app.post('/api/conectados', (req, res) => {
     let formattedDate = `${fechaHoy.getFullYear()}-${(fechaHoy.getMonth() + 1).toString().padStart(2, '0')}-${fechaHoy.getDate().toString().padStart(2, '0')}`;
 
     // Consultar la base de datos
-    db.all(`SELECT * FROM USUARIOS WHERE Fecha_VIVO = ? `, [ formattedDate ], (err, rows) => {
+    db.all(`SELECT * FROM USUARIOS WHERE DATE(Fecha_VIVO) = ? `, [ formattedDate ], (err, rows) => {
         if (err) {
             return res.status(500).json({ success: false, error: err.message });
         }
