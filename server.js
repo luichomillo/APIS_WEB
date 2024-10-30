@@ -322,11 +322,11 @@ app.post('/api/conectados', (req, res) => {
         if (err) {
             return res.status(500).json({ success: false, error: err.message });
         }
-        
+        console.log("formattedDate: ", formattedDate, rows.count);
         // Filtrar por VIVO
         const conectados = rows.filter(row => row.VIVO === true);
         const noConectados = rows.filter(row => row.VIVO === false);
-
+	console.log("conectados: ", conectados);
         return res.json({ success: true, conectados, noConectados });
     });
 });
