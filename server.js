@@ -353,6 +353,7 @@ mysqlConnection.connect((err) => {
     console.log('Conexión a MySQL establecida');
 });
 
+const sqliteDb = new sqlite3.Database('./analytics.db');
 app.get('/api/migrate-usuarios', (req, res) => {
     // Consultar todos los usuarios desde SQLite
     sqliteDb.all('SELECT USER, PASSW, HABILITADO, CATEGORIA, idUSER, IP_User, VIVO, Fecha_VIVO FROM Usuarios', (err, rows) => {
