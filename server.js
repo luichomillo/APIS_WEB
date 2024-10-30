@@ -408,3 +408,38 @@ app.get('/api/migrate-usuarios', (req, res) => {
         }, 2000); // Ajustar el tiempo según la cantidad de datos
     });
 });
+
+// *** Ruta para actualizar o insertar usuario en MySQL ***
+app.post('/api/usermysql', (req, res) => {
+    const { IP, USER } = req.body; // Obtener IP y USER del cuerpo de la solicitud
+
+    if (!IP || !USER) {
+        return res.status(400).json({ success: false, error: 'IP y USER son obligatorios' });
+    }
+
+    // Primero, intentamos actualizar al usuario existente
+    const updateQuery = `UPDATE Usuarios SET USER = ? WHERE IP_USER = ?`;
+    db.query(updateQuery, [USER, IP], (err, result) => {
+        if (err) {
+            console.error('Error al actualizar el usuario:', err.message);
+            return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
+        }
+
+        // Verificamos si se actualizó alguna fila
+        if (result.affectedRows === 0) {
+            // Si no se actualizó ninguna fila, insertemos un nuevo usuario
+            const insertQuery = `INSERT INTO Usuarios (IP_USER, USER) VALUES (?, ?)`;
+            db.query(insertQuery, [IP, USER], (err) => {
+                if (err) {
+                    console.error('Error al insertar el usuario:', err.message);
+                    return res.status(500).json({ success: false, error: 'Error al insertar en la base de datos' });
+                }
+
+                return res.json({ success: true, message: 'Usuario insertado exitosamente' });
+            });
+        } else {
+            // Si se actualizó, respondemos con un mensaje de éxito
+            return res.json({ success: true, message: 'Usuario actualizado exitosamente' });
+        }
+    });
+});
