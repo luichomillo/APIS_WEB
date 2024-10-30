@@ -41,12 +41,15 @@ app.get('/', (req, res) => {
 // API de prueba para consultar la base de datos
 app.get('/api/test', (req, res) => {
     db.all(`SELECT * FROM USUARIOS`, (err, rows) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        } else {
-            return res.json({ success: true, data: rows });
-        }
-    });
+	    if (err) {
+        	return res.status(500).json({ error: err.message });
+    	    } else {
+        	// Formatea los datos JSON con una sangría de 2 espacios y envuelve en `<pre>` para buena legibilidad en el navegador
+        	const formattedData = JSON.stringify(rows, null, 2);
+        
+        	return res.send(`<pre>${formattedData}</pre>`);
+    	    }
+	});
 });
 
 app.listen(PORT, () => {
@@ -70,6 +73,7 @@ app.post('/api/register-connection', (req, res) => {
     console.log("REGISTRAR CONEXION (POST) DE LA IP: ", IP);
     
     let fecha = new Date();
+    fecha.setHours(fecha.getHours() - 3); // Ajusta la hora a UTC-3 manualmente
     let formattedDate = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getDate().toString().padStart(2, '0')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
 
     if (!IP) {
@@ -112,6 +116,7 @@ app.get('/api/connections', (req, res) => {
 	// const { conexiones } = req.body;
 
 	let fecha = new Date();
+	fecha.setHours(fecha.getHours() - 3); // Ajusta la hora a UTC-3 manualmente
 	let formattedDate = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getDate().toString().padStart(2, '0')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
 	let formattedFecha = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getDate().toString().padStart(2, '0')}`;
 
@@ -146,6 +151,7 @@ app.get('/api/views', (req, res) => {
 	// const { vistas } = req.body;
 
 	let fecha = new Date();
+	fecha.setHours(fecha.getHours() - 3); // Ajusta la hora a UTC-3 manualmente
 	let formattedDate = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getDate().toString().padStart(2, '0')}`;
 
     db.get('SELECT COUNT(*) AS views FROM USUARIOS WHERE DATE(Fecha_VIVO) = ?', [formattedDate], (err, row) => {
@@ -187,6 +193,7 @@ app.post('/api/ping', (req, res) => {
     const { IP } = req.body;
 
     let fecha = new Date();
+    fecha.setHours(fecha.getHours() - 3); // Ajusta la hora a UTC-3 manualmente
     let formattedDate = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getDate().toString().padStart(2, '0')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
     
     // Actualizar la última actividad del usuario en la base de datos
