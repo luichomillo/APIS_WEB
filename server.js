@@ -266,3 +266,36 @@ app.get('/api/chat/messages', (req, res) => {
         })
         .catch(error => res.status(500).json({ error: error.message }));
 });
+
+// *** Ruta para actualizar o insertar usuario ***
+app.post('/api/user', (req, res) => {
+    const { IP, USER } = req.body; // Obtener IP y USER del cuerpo de la solicitud
+
+    if (!IP || !USER) {
+        return res.status(400).json({ success: false, error: 'IP y USER son obligatorios' });
+    }
+
+    // Primero, intentamos actualizar al usuario existente
+    db.run(`UPDATE USUARIOS SET USER = ? WHERE IP_USER = ?`, [USER, IP], function(err) {
+        if (err) {
+            console.error('Error al actualizar el usuario:', err.message);
+            return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
+        }
+
+        // Verificamos si se actualizó alguna fila
+        if (this.changes === 0) {
+            // Si no se actualizó ninguna fila, insertemos un nuevo usuario
+            db.run(`INSERT INTO USUARIOS (IP_USER, USER) VALUES (?, ?)`, [IP, USER], function(err) {
+                if (err) {
+                    console.error('Error al insertar el usuario:', err.message);
+                    return res.status(500).json({ success: false, error: 'Error al insertar en la base de datos' });
+                }
+
+                return res.json({ success: true, message: 'Usuario insertado exitosamente' });
+            });
+        } else {
+            // Si se actualizó, respondemos con un mensaje de éxito
+            return res.json({ success: true, message: 'Usuario actualizado exitosamente' });
+        }
+    });
+});
