@@ -299,3 +299,32 @@ app.post('/api/user', (req, res) => {
         }
     });
 });
+
+// *** Ruta para obtener usuarios conectados ***
+app.get('/api/conectados', (req, res) => {
+    // Verificar la IP del cliente
+    const clientIP = req.ip; // Obtiene la IP del cliente
+    const allowedIP = '190.244.137.138'; // Cambia esto por la IP de tu servidor
+
+    if (clientIP !== allowedIP) {
+        return res.status(403).json({ success: false, error: 'Acceso denegado' });
+    }
+
+    // Obtener la fecha de hoy en formato YYYY-MM-DD
+    let fechaHoy = new Date();
+    fechaHoy.setHours(fechaHoy.getHours() - 3); // Ajustar a UTC-3
+    let formattedDate = `${fechaHoy.getFullYear()}-${(fechaHoy.getMonth() + 1).toString().padStart(2, '0')}-${fechaHoy.getDate().toString().padStart(2, '0')}`;
+
+    // Consultar la base de datos
+    db.all(`SELECT * FROM USUARIOS WHERE Fecha_VIVO LIKE ? `, [`${formattedDate}%`], (err, rows) => {
+        if (err) {
+            return res.status(500).json({ success: false, error: err.message });
+        }
+        
+        // Filtrar por VIVO
+        const conectados = rows.filter(row => row.VIVO === true);
+        const noConectados = rows.filter(row => row.VIVO === false);
+
+        return res.json({ success: true, conectados, noConectados });
+    });
+});
