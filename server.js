@@ -40,15 +40,15 @@ app.get('/', (req, res) => {
 
 // API de prueba para consultar la base de datos
 app.get('/api/test', (req, res) => {
-    db.serialize(() => {
-        db.each(`SELECT * FROM USUARIOS`, (err, row) => {
+    
+        db.all(`SELECT * FROM USUARIOS`, (err, row) => {
             if (err) {
                 res.status(500).json({ error: err.message });
             } else {
-                res.json({ tables: row.count });
+                res.json({ "Usuarios: ", rows });
             }
         });
-    });
+    
 });
 
 app.listen(PORT, () => {
