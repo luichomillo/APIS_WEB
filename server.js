@@ -303,11 +303,11 @@ app.post('/api/user', (req, res) => {
 // *** Ruta para obtener usuarios conectados ***
 app.post('/api/conectados', (req, res) => {
     // Verificar la IP del cliente
-    const { clientIP } = req.body;  // Obtiene la IP del cliente
-    console.log("IP recibida en el servidor:", clientIP); // Añadir log para ver IP recibida
+    const { IP } = req.body;  // Obtiene la IP del cliente
+    console.log("IP recibida en el servidor:", IP); // Añadir log para ver IP recibida
     const allowedIP = '190.244.137.138'; // Cambia esto por la IP de tu servidor
 
-    if (clientIP !== allowedIP) {
+    if (IP !== allowedIP) {
         return res.status(403).json({ success: false, error: 'Acceso denegado' });
     }
 
