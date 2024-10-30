@@ -357,8 +357,13 @@ app.get('/api/migrate-usuarios', (req, res) => {
     // Consultar todos los usuarios desde SQLite
     sqliteDb.all('SELECT USER, PASSW, HABILITADO, CATEGORIA, idUSER, IP_User, VIVO, Fecha_VIVO FROM Usuarios', (err, rows) => {
         if (err) {
+            console.error("Error al consultar SQLite:", err.message);
             return res.status(500).json({ success: false, message: 'Error consultando SQLite', error: err.message });
         }
+
+        // Variable para contar las inserciones exitosas y fallidas
+        let successCount = 0;
+        let failureCount = 0;
 
         // Insertar cada usuario en MySQL
         rows.forEach(row => {
@@ -381,11 +386,24 @@ app.get('/api/migrate-usuarios', (req, res) => {
                 row.Fecha_VIVO
             ], (err) => {
                 if (err) {
+                    failureCount++;
                     console.error('Error migrando usuario:', row.USER, err.message);
+                } else {
+                    successCount++;
                 }
             });
         });
 
-        res.json({ success: true, message: 'Migración completa' });
+        // Esperar unos segundos para completar la migración antes de responder
+        setTimeout(() => {
+            res.json({
+                success: true,
+                message: 'Migración completa',
+                details: {
+                    inserted: successCount,
+                    failed: failureCount
+                }
+            });
+        }, 2000); // Ajustar el tiempo según la cantidad de datos
     });
 });
