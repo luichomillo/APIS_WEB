@@ -333,3 +333,22 @@ app.post('/api/conectados', (req, res) => {
         return res.json({ success: true, conectados, noConectados });
     });
 });
+
+// *** PRUEBA DE BASE DE DATOS MYSQL ***
+const mysql = require('mysql');
+
+const mysqlConnection = mysql.createConnection({
+    host: 'sql10.freesqldatabase.com',
+    user: 'sql10741803',
+    password: 'Kth7BbalP2',
+    database: 'sql10741803',
+    port: 3306
+});
+
+mysqlConnection.connect((err) => {
+    if (err) {
+        console.error('Error al conectar con MySQL:', err.message);
+        return;
+    }
+    console.log('Conexión a MySQL establecida');
+});
