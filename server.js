@@ -169,6 +169,7 @@ app.get('/api/views', (req, res) => {
 	//	    console.log("views enviados a FIREBASE:", row.views );
 	//	};
 	});
+});
 
 // *** PING AL USUARIO PARA VERIFICAR DESCONEXION ***
 app.post('/api/ping', (req, res) => {
