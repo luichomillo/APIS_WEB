@@ -89,7 +89,7 @@ app.post('/api/register-connection', (req, res) => {
         if (row) {
             // Si ya existe un registro para esta IP, marcar como conectado
             console.log("FECHA UPDATE", formattedDate);
-            db.run(`UPDATE USUARIOS SET VIVO = TRUE, Fecha_VIVO = ? WHERE IP_USER = ?`, [formattedDate, IP], function(err) {
+            db.run(`UPDATE USUARIOS SET VIVO = TRUE, CONECTADO = TRUE, Fecha_VIVO = ? WHERE IP_USER = ?`, [formattedDate, IP], function(err) {
                 if (err) {
                     console.log("ERROR AL REGISTRAR CONEXION UPDATE: ", err);
                     return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
@@ -100,7 +100,7 @@ app.post('/api/register-connection', (req, res) => {
         } else {
             // Si la IP no existe, crear un nuevo usuario anónimo
             console.log("FECHA INSERT: ", formattedDate);
-            db.run(`INSERT INTO USUARIOS (USER, IP_USER, VIVO, Fecha_VIVO) VALUES (?, ?, ?, ?)`, ['Anónimo', IP, true, formattedDate], function(err) {
+            db.run(`INSERT INTO USUARIOS (USER, IP_USER, VIVO, CONECTADO, Fecha_VIVO) VALUES (?, ?, ?, ?, ?)`, ['Anónimo', IP, true, true, formattedDate], function(err) {
                 if (err) {
                     console.log("ERROR AL REGISTRAR CONEXION INSERT: ", err);
                     return res.status(500).json({ success: false, error: 'Error al insertar en la base de datos' });
