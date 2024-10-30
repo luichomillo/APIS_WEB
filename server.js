@@ -40,7 +40,7 @@ app.get('/', (req, res) => {
 
 // API de prueba para consultar la base de datos
 app.get('/api/test', (req, res) => {
-    db.all(`SELECT * FROM USUARIOS`, (err, rows) => {
+    db.all(`SELECT * FROM USUARIOS ORDER BY Fecha_VIVO DESC`, (err, rows) => {
 	    if (err) {
         	return res.status(500).json({ error: err.message });
     	    } else {
