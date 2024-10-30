@@ -301,7 +301,7 @@ app.post('/api/user', (req, res) => {
 });
 
 // *** Ruta para obtener usuarios conectados ***
-app.get('/api/conectados', (req, res) => {
+app.post('/api/conectados', (req, res) => {
     // Verificar la IP del cliente
     const clientIP = req.ip; // Obtiene la IP del cliente
     console.log("IP recibida en el servidor:", clientIP); // Añadir log para ver IP recibida
