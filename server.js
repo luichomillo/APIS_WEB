@@ -572,6 +572,9 @@ app.post('/api/conectados-mysql', (req, res) => {
 });
 
 // ***************** LOGIN ***** MYSQL *****************
+const multer = require('multer');
+const upload = multer();
+
 app.post('/api/login-mysql', upload.none(), (req, res) => {
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
