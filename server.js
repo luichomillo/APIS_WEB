@@ -1,0 +1,500 @@
+const express = require('express');
+const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
+const cors = require('cors');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+const admin = require("firebase-admin");
+
+// **** para RNEDER sacar estos comentarios!! ***
+// var serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
+// admin.initializeApp({
+//	  credential: admin.credential.cert(serviceAccount),
+//	  databaseURL: "https://luichomillo-28552-default-rtdb.firebaseio.com"
+//	});
+
+// Habilitar CORS para tu dominio
+app.use(cors({
+    origin: 'https://luichomillo.freeddns.org', // Reemplaza esto con tu dominio
+    credentials: true // Permitir el uso de cookies si es necesario
+}));
+
+// Configura el middleware para poder recibir datos en JSON
+app.use(express.json());
+
+// Conexión a la base de datos SQLite
+let db = new sqlite3.Database('./analytics.db', (err) => {
+    if (err) {
+        console.error(err.message);
+    } else {
+        console.log('Conectado a la base de datos SQLite.');
+    }
+});
+
+// Ejemplo de ruta para probar la conexión
+app.get('/', (req, res) => {
+    res.send('¡Servidor en funcionamiento!');
+});
+
+// API de prueba para consultar la base de datos SQLITE3
+app.get('/api/test', (req, res) => {
+    db.all(`SELECT * FROM USUARIOS ORDER BY Fecha_VIVO DESC`, (err, rows) => {
+	    if (err) {
+        	return res.status(500).json({ error: err.message });
+    	    } else {
+        	// Formatea los datos JSON con una sangría de 2 espacios y envuelve en `<pre>` para buena legibilidad en el navegador
+        	const formattedData = JSON.stringify(rows, null, 2);
+        
+        	return res.send(`<pre>${formattedData}</pre>`);
+    	    }
+	});
+});
+
+// *** Ruta para registrar la conexión de un usuario *** SQLITE3 ***
+app.post('/api/register-connection', (req, res) => {
+    const { IP } = req.body;
+    console.log("REGISTRAR CONEXION (POST) DE LA IP: ", IP);
+    
+    let fecha = new Date();
+    fecha.setHours(fecha.getHours() - 3); // Ajusta la hora a UTC-3 manualmente
+    let formattedDate = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getDate().toString().padStart(2, '0')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
+
+    if (!IP) {
+        return res.status(400).json({ success: false, error: 'POST: IP no proporcionada' });
+    }
+
+    db.get('SELECT * FROM USUARIOS WHERE IP_USER = ?', [IP], (err, row) => {
+        if (err) {
+            console.log("ERROR EN EL SERVIDOR: ", err);
+            return res.status(500).json({ success: false, error: 'Error en el servidor' });
+        }
+
+        if (row) {
+            // Si ya existe un registro para esta IP, marcar como conectado
+            console.log("FECHA UPDATE", formattedDate);
+            db.run(`UPDATE USUARIOS SET VIVO = TRUE, CONECTADO = TRUE, Fecha_VIVO = ? WHERE IP_USER = ?`, [formattedDate, IP], function(err) {
+                if (err) {
+                    console.log("ERROR AL REGISTRAR CONEXION UPDATE: ", err);
+                    return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
+                }
+                console.log("REGISTRAR CONEXION OK");
+                return res.json({ success: true });
+            });
+        } else {
+            // Si la IP no existe, crear un nuevo usuario anónimo
+            console.log("FECHA INSERT: ", formattedDate);
+            db.run(`INSERT INTO USUARIOS (USER, IP_USER, VIVO, CONECTADO, Fecha_VIVO) VALUES (?, ?, ?, ?, ?)`, ['Anónimo', IP, true, true, formattedDate], function(err) {
+                if (err) {
+                    console.log("ERROR AL REGISTRAR CONEXION INSERT: ", err);
+                    return res.status(500).json({ success: false, error: 'Error al insertar en la base de datos' });
+                }
+                console.log("NUEVA IP");
+                return res.json({ success: true });
+            });
+        }
+    });
+});
+
+// *** PING AL USUARIO PARA VERIFICAR DESCONEXION *** SQLITE3 ***
+app.post('/api/ping', (req, res) => {
+    const { IP } = req.body;
+
+    let fecha = new Date();
+    fecha.setHours(fecha.getHours() - 3); // Ajusta la hora a UTC-3 manualmente
+    let formattedDate = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getDate().toString().padStart(2, '0')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
+    
+    // Actualizar la última actividad del usuario en la base de datos
+    db.run(`UPDATE USUARIOS SET Fecha_VIVO = ? WHERE IP_USER = ?`, [formattedDate, IP], function(err) {
+        if (err) {
+            console.error('Error al actualizar Fecha_VIVO en el ping:', err.message);
+            return res.status(500).json({ success: false, error: 'Error en el servidor' });
+        }
+	console.log(`Ping exitoso para IP ${IP}`);
+        return res.json({ success: true });
+    });
+});
+
+// ****LOGOUT USUARIOS**** SQLITE3 ***
+app.post('/api/logout', (req, res) => {
+    const { IP } = req.body;
+
+    if (!IP) {
+        return res.status(400).json({ success: false, error: 'IP no proporcionada' });
+    }
+
+    db.run(`UPDATE USUARIOS SET CONECTADO = FALSE, VIVO = FALSE WHERE IP_USER = ?`, [IP], function(err) {
+        if (err) {
+            return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
+        }
+        console.log(`Usuario con IP ${IP} desconectado.`);
+        return res.json({ success: true, message: "Usuario desconectado correctamente" });
+    });
+});
+
+// *** API para verificar y desconectar usuarios inactivos ***
+app.get('/api/verify-status', (req, res) => {
+    const sql = `
+        SELECT * FROM USUARIOS
+        WHERE (CONECTADO = TRUE OR VIVO = TRUE)
+        AND datetime(Fecha_VIVO) <= datetime('now', 'localtime', '-15 minutes')
+    `;
+
+    db.all(sql, (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+
+        if (rows.length > 0) {
+            const updateSql = `UPDATE USUARIOS SET CONECTADO = FALSE, VIVO = FALSE 
+                               WHERE (CONECTADO = TRUE OR VIVO = TRUE) 
+                               AND datetime(Fecha_VIVO) <= datetime('now', 'localtime', '-15 minutes')`;
+            db.run(updateSql, (updateErr) => {
+                if (updateErr) {
+                    return res.status(500).json({ error: updateErr.message });
+                }
+                console.log("Usuarios inactivos actualizados correctamente.");
+                return res.json({ success: true, message: "Usuarios inactivos desconectados", inactiveUsers: rows });
+            });
+        } else {
+            console.log("No hay usuarios inactivos");
+            return res.json({ success: true, message: "No hay usuarios inactivos" });
+        }
+    });
+});
+
+// *** CHAT ***
+app.post('/api/chat/send', (req, res) => {
+    const { user, message } = req.body;
+
+    if (!user || !message) {
+        return res.status(400).json({ error: 'Usuario y mensaje son necesarios' });
+    }
+
+    const messageData = {
+        user,
+        message,
+        timestamp: admin.firestore.Timestamp.now()
+    };
+
+    admin.firestore().collection('messages').add(messageData)
+        .then(() => res.json({ success: true, message: 'Mensaje enviado' }))
+        .catch((error) => res.status(500).json({ error: error.message }));
+});
+
+// *** Ruta para actualizar o insertar usuario ***
+app.post('/api/user', (req, res) => {
+    const { IP, USER } = req.body; // Obtener IP y USER del cuerpo de la solicitud
+
+    if (!IP || !USER) {
+        return res.status(400).json({ success: false, error: 'IP y USER son obligatorios' });
+    }
+
+    // Primero, intentamos actualizar al usuario existente
+    db.run(`UPDATE USUARIOS SET USER = ? WHERE IP_USER = ?`, [USER, IP], function(err) {
+        if (err) {
+            console.error('Error al actualizar el usuario:', err.message);
+            return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
+        }
+
+        // Verificamos si se actualizó alguna fila
+        if (this.changes === 0) {
+            // Si no se actualizó ninguna fila, insertemos un nuevo usuario
+            db.run(`INSERT INTO USUARIOS (IP_USER, USER) VALUES (?, ?)`, [IP, USER], function(err) {
+                if (err) {
+                    console.error('Error al insertar el usuario:', err.message);
+                    return res.status(500).json({ success: false, error: 'Error al insertar en la base de datos' });
+                }
+
+                return res.json({ success: true, message: 'Usuario insertado exitosamente' });
+            });
+        } else {
+            // Si se actualizó, respondemos con un mensaje de éxito
+            return res.json({ success: true, message: 'Usuario actualizado exitosamente' });
+        }
+    });
+});
+
+// *** CHAT MENSAJES ***
+app.get('/api/chat/messages', (req, res) => {
+    admin.firestore().collection('messages').orderBy('timestamp', 'desc').limit(50).get()
+        .then(snapshot => {
+            const messages = [];
+            snapshot.forEach(doc => messages.push(doc.data()));
+            res.json(messages);
+        })
+        .catch(error => res.status(500).json({ error: error.message }));
+});
+
+// *** Ruta para obtener usuarios conectados ***
+app.post('/api/conectados', (req, res) => {
+    // Verificar la IP del cliente
+    const { IP } = req.body;  // Obtiene la IP del cliente
+    console.log("IP recibida en el servidor:", req.body); // Añadir log para ver IP recibida
+    const allowedIP = '190.244.137.138'; // Cambia esto por la IP de tu servidor
+
+    if (IP !== allowedIP) {
+	console.log("IP: ", IP, " Permitida: ", allowedIP)
+        return res.status(403).json({ success: false, error: 'Acceso denegado' });
+    }
+
+    // Obtener la fecha de hoy en formato YYYY-MM-DD
+    let fechaHoy = new Date();
+    fechaHoy.setHours(fechaHoy.getHours() - 3); // Ajustar a UTC-3
+    let formattedDate = `${fechaHoy.getFullYear()}-${(fechaHoy.getMonth() + 1).toString().padStart(2, '0')}-${fechaHoy.getDate().toString().padStart(2, '0')}`;
+
+    // Consultar la base de datos
+    db.all(`SELECT * FROM USUARIOS WHERE DATE(Fecha_VIVO) = ? `, [ formattedDate ], (err, rows) => {
+        if (err) {
+            return res.status(500).json({ success: false, error: err.message });
+        }
+        console.log("formattedDate: ", formattedDate, "rows: ", rows);
+        // Filtrar por VIVO
+        const conectados = rows.filter(row => row.VIVO === 1);
+        const noConectados = rows.filter(row => row.VIVO === 0);
+	
+	console.log("conectados: ", conectados);
+	console.log("noConectados: ", noConectados);
+	    
+        return res.json({ success: true, conectados, noConectados });
+    });
+});
+
+// *** PRUEBA DE BASE DE DATOS MYSQL ***
+const mysql = require('mysql');
+
+const mysqlConnection = mysql.createConnection({
+    host: 'sql10.freesqldatabase.com',
+    user: 'sql10741803',
+    password: 'Kth7BbalP2',
+    database: 'sql10741803',
+    port: 3306,
+    connectTimeout: 10000 // Timeout de conexión de 10 segundos
+});
+
+mysqlConnection.connect((err) => {
+    if (err) {
+        console.error('Error al conectar con MySQL:', err.message);
+        return;
+    }
+    console.log('Conexión a MySQL establecida');
+});
+
+// *** Ruta para actualizar o insertar usuario en MySQL *** CHECK
+app.post('/api/usermysql', (req, res) => {
+    const { IP, USER } = req.body; // Obtener IP y USER del cuerpo de la solicitud
+    console.log("antes del update: IP ", IP, "USER ", USER);
+    
+    if (!IP || !USER) {
+        return res.status(400).json({ success: false, error: 'IP y USER son obligatorios' });
+    }
+
+    const fechaHoy = new Date();
+    fechaHoy.setHours(fechaHoy.getHours() - 3); // Ajustar a UTC-3
+    const fechaVivo = fechaHoy.toISOString().slice(0, 19).replace('T', ' '); // Obtener fecha y hora actual en formato 'YYYY-MM-DD HH:MM:SS'
+    	
+    // Primero, intentamos actualizar al usuario existente
+    const updateQuery = `UPDATE Usuarios SET USER = ?, VIVO = 1, FECHA_VIVO = ? WHERE IP_USER = ?`;
+    mysqlConnection.query(updateQuery, [USER, fechaVivo, IP], (err, result) => {
+        if (err) {
+            console.error('Error al actualizar el usuario:', err.message);
+            return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
+        }
+
+        // Verificamos si se actualizó alguna fila
+        if (result.affectedRows === 0) {
+            // Si no se actualizó ninguna fila, insertemos un nuevo usuario
+            const insertQuery = `INSERT INTO Usuarios (IP_USER, USER, VIVO, FECHA_VIVO) VALUES (?, ?, 1, ?)`;
+            mysqlConnection.query(insertQuery, [IP, USER, fechaVivo], (err) => {
+                if (err) {
+                    console.error('Error al insertar el usuario:', err.message);
+                    return res.status(500).json({ success: false, error: 'Error al insertar en la base de datos' });
+                }
+
+                return res.json({ success: true, message: 'Usuario insertado exitosamente' });
+            });
+        } else {
+            // Si se actualizó, respondemos con un mensaje de éxito
+            return res.json({ success: true, message: 'Usuario actualizado exitosamente' });
+        }
+    });
+});
+
+// *** Registrar Conexión version MYSQL *** CHECK
+app.post('/api/register-connection-mysql', (req, res) => {
+    const { IP } = req.body;
+    console.log("REGISTRAR CONEXION (POST) DE LA IP:", IP);
+
+    // Ajusta la fecha a UTC-3
+    let fechaHoy = new Date();
+    fechaHoy.setHours(fechaHoy.getHours() - 3);
+    let formattedDate = fechaHoy.toISOString().slice(0, 19).replace('T', ' ');
+
+    if (!IP) {
+        return res.status(400).json({ success: false, error: 'POST: IP no proporcionada' });
+    }
+
+    mysqlConnection.query('SELECT * FROM Usuarios WHERE IP_USER = ?', [IP], (err, results) => {
+        if (err) {
+            console.error("ERROR EN EL SERVIDOR:", err);
+            return res.status(500).json({ success: false, error: 'Error en el servidor' });
+        }
+
+        if (results.length > 0) {
+            // Si ya existe un registro para esta IP, marcar como conectado
+            console.log("FECHA UPDATE:", formattedDate);
+            mysqlConnection.query(
+                `UPDATE Usuarios SET VIVO = 1, FECHA_VIVO = ? WHERE IP_USER = ?`,
+                [formattedDate, IP],
+                (err) => {
+                    if (err) {
+                        console.error("ERROR AL REGISTRAR CONEXION UPDATE:", err);
+                        return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
+                    }
+                    console.log("REGISTRAR CONEXION OK");
+                    return res.json({ success: true });
+                }
+            );
+        } else {
+            // Si la IP no existe, crear un nuevo usuario anónimo
+            console.log("FECHA INSERT:", formattedDate);
+            mysqlConnection.query(
+                `INSERT INTO Usuarios (USER, IP_USER, VIVO, FECHA_VIVO) VALUES (?, ?, ?, ?)`,
+                ['Anónimo', IP, 1, formattedDate],
+                (err) => {
+                    if (err) {
+                        console.error("ERROR AL REGISTRAR CONEXION INSERT:", err);
+                        return res.status(500).json({ success: false, error: 'Error al insertar en la base de datos' });
+                    }
+                    console.log("NUEVA IP");
+                    return res.json({ success: true });
+                }
+            );
+        }
+    });
+});
+
+// *** CONTADOR CONEXIONES *** MYSQL *** CHECK
+app.get('/api/connections-mysql', (req, res) => {
+    // Ajusta la fecha a UTC-3
+    let fecha = new Date();
+    fecha.setHours(fecha.getHours() - 3);
+    let formattedFecha = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getDate().toString().padStart(2, '0')}`;
+    let formattedDate = fecha.toISOString().slice(0, 19).replace('T', ' ');
+
+    // Consulta para contar conexiones activas (VIVO = TRUE) del día actual
+    mysqlConnection.query(
+        'SELECT COUNT(*) AS connections FROM Usuarios WHERE VIVO = 1 AND DATE(FECHA_VIVO) = ?',
+        [formattedFecha],
+        (err, results) => {
+            if (err) {
+                console.error('Error al obtener conexiones:', err.message);
+                return res.status(500).json({ success: false, error: 'Error en el servidor' });
+            }
+            const connections = results[0].connections;
+            console.log("Conexiones activas:", connections);
+            res.json({ connections });
+
+            // Desconectar usuarios inactivos por más de 10 minutos
+            mysqlConnection.query(
+                `UPDATE Usuarios 
+                 SET VIVO = 0 
+                 WHERE VIVO = 1 
+                 AND TIMESTAMPDIFF(MINUTE, FECHA_VIVO, ?) > 10`,
+                [formattedDate],
+                (err) => {
+                    if (err) {
+                        console.error('Error al actualizar el estado de conexión:', err.message);
+                    } else {
+                        console.log("Usuarios inactivos desconectados después de 10 minutos.");
+                    }
+                }
+            );
+        }
+    );
+});
+
+// *** CONTADOR DE VISTAS *** MYSQL *** CHECK
+app.get('/api/views-mysql', (req, res) => {
+    let fecha = new Date();
+    fecha.setHours(fecha.getHours() - 3); // Ajuste a UTC-3
+    let formattedFecha = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getDate().toString().padStart(2, '0')}`;
+
+    mysqlConnection.query(
+        'SELECT COUNT(*) AS views FROM Usuarios WHERE DATE(FECHA_VIVO) = ?',
+        [formattedFecha],
+        (err, results) => {
+            if (err) {
+                console.error('Error al obtener vistas:', err.message);
+                return res.status(500).json({ success: false, error: 'Error en el servidor' });
+            }
+            const views = results[0].views;
+            console.log("Vistas totales:", views);
+            res.json({ views });
+        }
+    );
+});
+
+// PING PARA VERIFICAR CONEXION *** MYSQL *** CHECK
+app.post('/api/ping-mysql', (req, res) => {
+    const { IP } = req.body;
+
+    if (!IP) {
+        return res.status(400).json({ success: false, error: 'IP no proporcionada' });
+    }
+
+    let fecha = new Date();
+    fecha.setHours(fecha.getHours() - 3); // Ajuste a UTC-3
+    let formattedDate = fecha.toISOString().slice(0, 19).replace('T', ' ');
+
+    mysqlConnection.query(
+        'UPDATE Usuarios SET FECHA_VIVO = ? WHERE IP_USER = ?',
+        [formattedDate, IP],
+        (err, result) => {
+            if (err) {
+                console.error('Error al actualizar FECHA_VIVO en el ping:', err.message);
+                return res.status(500).json({ success: false, error: 'Error en el servidor' });
+            }
+            console.log(`Ping exitoso para IP ${IP}`);
+            res.json({ success: true });
+        }
+    );
+});
+
+// LOG OUT DE USUARIOS *** MYSQL *** CHECK
+app.post('/api/logout-mysql', (req, res) => {
+    const { IP } = req.body;
+
+    if (!IP) {
+        return res.status(400).json({ success: false, error: 'IP no proporcionada' });
+    }
+
+    mysqlConnection.query(
+        'UPDATE Usuarios SET VIVO = 0 WHERE IP_USER = ?',
+        [IP],
+        (err, result) => {
+            if (err) {
+                console.error('Error al realizar logout:', err.message);
+                return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
+            }
+            console.log(`Usuario con IP ${IP} desconectado.`);
+            res.json({ success: true, message: "Usuario desconectado correctamente" });
+        }
+    );
+});
+
+// ******************************************************************
+app.listen(PORT, () => {
+    console.log(`Servidor escuchando en el puerto ${PORT}`);
+});
+
+// Cerrar la conexión de la base de datos al cerrar el servidor
+process.on('SIGINT', () => {
+    db.close((err) => {
+        if (err) {
+            console.error(err.message);
+        }
+        console.log('Cerrando la conexión con la base de datos.');
+        process.exit(0);
+    });
+});
