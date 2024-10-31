@@ -571,6 +571,48 @@ app.post('/api/conectados-mysql', (req, res) => {
     );
 });
 
+// ***************** LOGIN ***** MYSQL *****************
+app.post('/api/login-mysql', upload.none(), (req, res) => {
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+
+    const { user, passw, IP } = req.body;
+    console.log("user:", user, "passw:", passw, "IP:", IP);
+
+    // Consulta para verificar credenciales
+    mysqlConnection.query(
+        'SELECT * FROM Usuarios WHERE USER = ? AND PASSW = ?',
+        [user, passw],
+        (err, results) => {
+            if (err) {
+                return res.status(500).json({ success: false, error: 'Error en el servidor' });
+            }
+
+            if (results.length > 0) {
+                const row = results[0];
+                console.log("Inicia sesión para ID:", row.idUSER);
+              
+                // Marcar al usuario como conectado
+                let fecha = new Date();
+                let formattedDate = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getDate().toString().padStart(2, '0')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
+
+                mysqlConnection.query(
+                    `UPDATE Usuarios SET VIVO = 1, FECHA_VIVO = ?, IP_USER = ? WHERE idUSER = ?`,
+                    [formattedDate, IP, row.idUSER],
+                    (err) => {
+                        if (err) {
+                            return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
+                        }                
+                        return res.json({ success: true });
+                    }
+                );
+            } else {                
+                return res.json({ success: false, error: 'Usuario o contraseña incorrectos' });
+            }
+        }
+    );
+});
+
 // ******************************************************************
 app.listen(PORT, () => {
     console.log(`Servidor escuchando en el puerto ${PORT}`);
