@@ -491,3 +491,112 @@ app.post('/api/register-connection-mysql', (req, res) => {
         }
     });
 });
+
+// *** CONTADOR CONEXIONES *** MYSQL ***
+app.get('/api/connections-mysql', (req, res) => {
+    // Ajusta la fecha a UTC-3
+    let fecha = new Date();
+    fecha.setHours(fecha.getHours() - 3);
+    let formattedFecha = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getDate().toString().padStart(2, '0')}`;
+    let formattedDate = fecha.toISOString().slice(0, 19).replace('T', ' ');
+
+    // Consulta para contar conexiones activas (VIVO = TRUE) del día actual
+    mysqlConnection.query(
+        'SELECT COUNT(*) AS connections FROM Usuarios WHERE VIVO = 1 AND DATE(FECHA_VIVO) = ?',
+        [formattedFecha],
+        (err, results) => {
+            if (err) {
+                console.error('Error al obtener conexiones:', err.message);
+                return res.status(500).json({ success: false, error: 'Error en el servidor' });
+            }
+            const connections = results[0].connections;
+            console.log("Conexiones activas:", connections);
+            res.json({ connections });
+
+            // Desconectar usuarios inactivos por más de 10 minutos
+            mysqlConnection.query(
+                `UPDATE Usuarios 
+                 SET VIVO = 0 
+                 WHERE VIVO = 1 
+                 AND TIMESTAMPDIFF(MINUTE, FECHA_VIVO, ?) > 10`,
+                [formattedDate],
+                (err) => {
+                    if (err) {
+                        console.error('Error al actualizar el estado de conexión:', err.message);
+                    } else {
+                        console.log("Usuarios inactivos desconectados después de 10 minutos.");
+                    }
+                }
+            );
+        }
+    );
+});
+
+// *** CONTADOR DE VISTAS *** MYSQL ***
+app.get('/api/views-mysql', (req, res) => {
+    let fecha = new Date();
+    fecha.setHours(fecha.getHours() - 3); // Ajuste a UTC-3
+    let formattedFecha = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getDate().toString().padStart(2, '0')}`;
+
+    mysqlConnection.query(
+        'SELECT COUNT(*) AS views FROM Usuarios WHERE DATE(FECHA_VIVO) = ?',
+        [formattedFecha],
+        (err, results) => {
+            if (err) {
+                console.error('Error al obtener vistas:', err.message);
+                return res.status(500).json({ success: false, error: 'Error en el servidor' });
+            }
+            const views = results[0].views;
+            console.log("Vistas totales:", views);
+            res.json({ views });
+        }
+    );
+});
+
+// PING PARA VERIFICAR CONEXION *** MYSQL ***
+app.post('/api/ping-mysql', (req, res) => {
+    const { IP } = req.body;
+
+    if (!IP) {
+        return res.status(400).json({ success: false, error: 'IP no proporcionada' });
+    }
+
+    let fecha = new Date();
+    fecha.setHours(fecha.getHours() - 3); // Ajuste a UTC-3
+    let formattedDate = fecha.toISOString().slice(0, 19).replace('T', ' ');
+
+    mysqlConnection.query(
+        'UPDATE Usuarios SET FECHA_VIVO = ? WHERE IP_USER = ?',
+        [formattedDate, IP],
+        (err, result) => {
+            if (err) {
+                console.error('Error al actualizar FECHA_VIVO en el ping:', err.message);
+                return res.status(500).json({ success: false, error: 'Error en el servidor' });
+            }
+            console.log(`Ping exitoso para IP ${IP}`);
+            res.json({ success: true });
+        }
+    );
+});
+
+// LOG OUT DE USUARIOS *** MYSQL ***
+app.post('/api/logout-mysql', (req, res) => {
+    const { IP } = req.body;
+
+    if (!IP) {
+        return res.status(400).json({ success: false, error: 'IP no proporcionada' });
+    }
+
+    mysqlConnection.query(
+        'UPDATE Usuarios SET VIVO = 0 WHERE IP_USER = ?',
+        [IP],
+        (err, result) => {
+            if (err) {
+                console.error('Error al realizar logout:', err.message);
+                return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
+            }
+            console.log(`Usuario con IP ${IP} desconectado.`);
+            res.json({ success: true, message: "Usuario desconectado correctamente" });
+        }
+    );
+});
