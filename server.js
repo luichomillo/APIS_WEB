@@ -458,8 +458,9 @@ app.post('/api/usermysql', (req, res) => {
         return res.status(400).json({ success: false, error: 'IP y USER son obligatorios' });
     }
 
-    const fechaVivo = new Date().toISOString().slice(0, 19).replace('T', ' '); // Obtener fecha y hora actual en formato 'YYYY-MM-DD HH:MM:SS'
-    
+    //const fechaVivo = new Date().toISOString().slice(0, 19).replace('T', ' '); // Obtener fecha y hora actual en formato 'YYYY-MM-DD HH:MM:SS'
+     const fechaVivo = new Date(new Date().getTime() - (3 * 60 * 60 * 1000)).toISOString().slice(0, 19).replace('T', ' '); // Ajustar a UTC-3
+	
     // Primero, intentamos actualizar al usuario existente
     const updateQuery = `UPDATE Usuarios SET USER = ?, VIVO = 1, FECHA_VIVO = ? WHERE IP_USER = ?`;
     mysqlConnection.query(updateQuery, [USER, fechaVivo, IP], (err, result) => {
