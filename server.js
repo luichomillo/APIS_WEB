@@ -530,25 +530,6 @@ app.get('/api/connections-mysql', (req, res) => {
     );
 });
 
-// *** CONTADOR DE VISTAS *** MYSQL ***
-app.get('/api/views-mysql', (req, res) => {
-    let fecha = new Date();
-    fecha.setHours(fecha.getHours() - 3); // Ajuste a UTC-3
-    let formattedFecha = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getDate().toString().padStart(2, '0')}`;
-
-    mysqlConnection.query(
-        'SELECT COUNT(*) AS views FROM Usuarios WHERE DATE(FECHA_VIVO) = ?',
-        [formattedFecha],
-        (err, results) => {
-            if (err) {
-                console.error('Error al obtener vistas:', err.message);
-                return res.status(500).json({ success: false, error: 'Error en el servidor' });
-            }           
-            res.json({ views });
-        }
-    );
-});
-
 // PING PARA VERIFICAR CONEXION *** MYSQL ***
 app.post('/api/ping-mysql', (req, res) => {
     const { IP } = req.body;
