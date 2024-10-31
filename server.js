@@ -459,7 +459,9 @@ app.post('/api/usermysql', (req, res) => {
     }
 
     //const fechaVivo = new Date().toISOString().slice(0, 19).replace('T', ' '); // Obtener fecha y hora actual en formato 'YYYY-MM-DD HH:MM:SS'
-     const fechaVivo = new Date(new Date().getTime() - (3 * 60 * 60 * 1000)).toISOString().slice(0, 19).replace('T', ' '); // Ajustar a UTC-3
+     // Obtener fecha y hora actual ajustada a UTC-3
+    const fechaVivo = new Date().toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' });
+    const fechaVivoFormatted = fechaVivo.replace('T', ' ').slice(0, 19); // Ajustar formato a 'YYYY-MM-DD HH:MM:SS'
 	
     // Primero, intentamos actualizar al usuario existente
     const updateQuery = `UPDATE Usuarios SET USER = ?, VIVO = 1, FECHA_VIVO = ? WHERE IP_USER = ?`;
