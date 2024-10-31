@@ -522,7 +522,7 @@ app.get('/api/verify-status-mysql', (req, res) => {
 // *** VERIFICA STATUS CADA 15' ***
 const axios = require('axios');
 setInterval(() => {
-    axios.get('http://localhost:3000/api/verify-status-mysql')
+    axios.get('https://apis-web-1.onrender.com/api/verify-status-mysql')
         .then(response => {
             console.log("Verificación de usuarios inactivos completada:", response.data);
         })
@@ -617,7 +617,7 @@ app.post('/api/login-mysql', (req, res) => {
 });
 
 // **** VERIFICAR SI EL USUARIO ESTA LOGUEADO POR IP **** MYSQL ****
-app.get('/api/verificarusuario', cors(credentialsCorsOptions), (req, res) => {
+app.get('/api/verificarusuario', (req, res) => {
     // Obtener la IP del parámetro de la URL
     const { IP } = req.query;
     console.log("Parámetro IP recibido: ", IP);
