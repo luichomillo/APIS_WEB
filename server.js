@@ -39,7 +39,7 @@ app.get('/', (req, res) => {
 
 // API de prueba para consultar la base de datos SQLITE3
 app.get('/api/test', (req, res) => {
-    db.all(`SELECT * FROM USUARIOS ORDER BY Fecha_VIVO DESC`, (err, rows) => {
+    db.all(`SELECT * FROM Usuarios ORDER BY Fecha_VIVO DESC`, (err, rows) => {
 	    if (err) {
         	return res.status(500).json({ error: err.message });
     	    } else {
@@ -64,7 +64,7 @@ app.post('/api/register-connection', (req, res) => {
         return res.status(400).json({ success: false, error: 'POST: IP no proporcionada' });
     }
 
-    db.get('SELECT * FROM USUARIOS WHERE IP_USER = ?', [IP], (err, row) => {
+    db.get('SELECT * FROM Usuarios WHERE IP_USER = ?', [IP], (err, row) => {
         if (err) {
             console.log("ERROR EN EL SERVIDOR: ", err);
             return res.status(500).json({ success: false, error: 'Error en el servidor' });
@@ -73,7 +73,7 @@ app.post('/api/register-connection', (req, res) => {
         if (row) {
             // Si ya existe un registro para esta IP, marcar como conectado
             console.log("FECHA UPDATE", formattedDate);
-            db.run(`UPDATE USUARIOS SET VIVO = TRUE, CONECTADO = TRUE, Fecha_VIVO = ? WHERE IP_USER = ?`, [formattedDate, IP], function(err) {
+            db.run(`UPDATE Usuarios SET VIVO = TRUE, CONECTADO = TRUE, Fecha_VIVO = ? WHERE IP_USER = ?`, [formattedDate, IP], function(err) {
                 if (err) {
                     console.log("ERROR AL REGISTRAR CONEXION UPDATE: ", err);
                     return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
@@ -84,7 +84,7 @@ app.post('/api/register-connection', (req, res) => {
         } else {
             // Si la IP no existe, crear un nuevo usuario anónimo
             console.log("FECHA INSERT: ", formattedDate);
-            db.run(`INSERT INTO USUARIOS (USER, IP_USER, VIVO, CONECTADO, Fecha_VIVO) VALUES (?, ?, ?, ?, ?)`, ['Anónimo', IP, true, true, formattedDate], function(err) {
+            db.run(`INSERT INTO Usuarios (USER, IP_USER, VIVO, CONECTADO, Fecha_VIVO) VALUES (?, ?, ?, ?, ?)`, ['Anónimo', IP, true, true, formattedDate], function(err) {
                 if (err) {
                     console.log("ERROR AL REGISTRAR CONEXION INSERT: ", err);
                     return res.status(500).json({ success: false, error: 'Error al insertar en la base de datos' });
@@ -105,7 +105,7 @@ app.post('/api/ping', (req, res) => {
     let formattedDate = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getDate().toString().padStart(2, '0')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
     
     // Actualizar la última actividad del usuario en la base de datos
-    db.run(`UPDATE USUARIOS SET Fecha_VIVO = ? WHERE IP_USER = ?`, [formattedDate, IP], function(err) {
+    db.run(`UPDATE Usuarios SET Fecha_VIVO = ? WHERE IP_USER = ?`, [formattedDate, IP], function(err) {
         if (err) {
             console.error('Error al actualizar Fecha_VIVO en el ping:', err.message);
             return res.status(500).json({ success: false, error: 'Error en el servidor' });
@@ -123,7 +123,7 @@ app.post('/api/logout', (req, res) => {
         return res.status(400).json({ success: false, error: 'IP no proporcionada' });
     }
 
-    db.run(`UPDATE USUARIOS SET CONECTADO = FALSE, VIVO = FALSE WHERE IP_USER = ?`, [IP], function(err) {
+    db.run(`UPDATE Usuarios SET CONECTADO = FALSE, VIVO = FALSE WHERE IP_USER = ?`, [IP], function(err) {
         if (err) {
             return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
         }
@@ -135,7 +135,7 @@ app.post('/api/logout', (req, res) => {
 // *** API para verificar y desconectar usuarios inactivos *** SQLITE3 ***
 app.get('/api/verify-status', (req, res) => {
     const sql = `
-        SELECT * FROM USUARIOS
+        SELECT * FROM Usuarios
         WHERE (CONECTADO = TRUE OR VIVO = TRUE)
         AND datetime(Fecha_VIVO) <= datetime('now', 'localtime', '-15 minutes')
     `;
@@ -146,7 +146,7 @@ app.get('/api/verify-status', (req, res) => {
         }
 
         if (rows.length > 0) {
-            const updateSql = `UPDATE USUARIOS SET CONECTADO = FALSE, VIVO = FALSE 
+            const updateSql = `UPDATE Usuarios SET CONECTADO = FALSE, VIVO = FALSE 
                                WHERE (CONECTADO = TRUE OR VIVO = TRUE) 
                                AND datetime(Fecha_VIVO) <= datetime('now', 'localtime', '-15 minutes')`;
             db.run(updateSql, (updateErr) => {
@@ -191,7 +191,7 @@ app.post('/api/user', (req, res) => {
     }
 
     // Primero, intentamos actualizar al usuario existente
-    db.run(`UPDATE USUARIOS SET USER = ? WHERE IP_USER = ?`, [USER, IP], function(err) {
+    db.run(`UPDATE Usuarios SET USER = ? WHERE IP_USER = ?`, [USER, IP], function(err) {
         if (err) {
             console.error('Error al actualizar el usuario:', err.message);
             return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
@@ -200,7 +200,7 @@ app.post('/api/user', (req, res) => {
         // Verificamos si se actualizó alguna fila
         if (this.changes === 0) {
             // Si no se actualizó ninguna fila, insertemos un nuevo usuario
-            db.run(`INSERT INTO USUARIOS (IP_USER, USER) VALUES (?, ?)`, [IP, USER], function(err) {
+            db.run(`INSERT INTO Usuarios (IP_USER, USER) VALUES (?, ?)`, [IP, USER], function(err) {
                 if (err) {
                     console.error('Error al insertar el usuario:', err.message);
                     return res.status(500).json({ success: false, error: 'Error al insertar en la base de datos' });
@@ -244,7 +244,7 @@ app.post('/api/conectados', (req, res) => {
     let formattedDate = `${fechaHoy.getFullYear()}-${(fechaHoy.getMonth() + 1).toString().padStart(2, '0')}-${fechaHoy.getDate().toString().padStart(2, '0')}`;
 
     // Consultar la base de datos
-    db.all(`SELECT * FROM USUARIOS WHERE DATE(Fecha_VIVO) = ? `, [ formattedDate ], (err, rows) => {
+    db.all(`SELECT * FROM Usuarios WHERE DATE(Fecha_VIVO) = ? `, [ formattedDate ], (err, rows) => {
         if (err) {
             return res.status(500).json({ success: false, error: err.message });
         }
