@@ -492,7 +492,7 @@ app.post('/api/register-connection-mysql', (req, res) => {
     });
 });
 
-// *** CONTADOR DE CONEXIONES *** MYSQL ***
+// *** CONTADOR CONEXIONES *** MYSQL ***
 app.get('/api/connections-mysql', (req, res) => {
     // Ajusta la fecha a UTC-3
     let fecha = new Date();
@@ -508,7 +508,9 @@ app.get('/api/connections-mysql', (req, res) => {
             if (err) {
                 console.error('Error al obtener conexiones:', err.message);
                 return res.status(500).json({ success: false, error: 'Error en el servidor' });
-            }            
+            }
+            const connections = results[0].connections;
+            console.log("Conexiones activas:", connections);
             res.json({ connections });
 
             // Desconectar usuarios inactivos por más de 10 minutos
@@ -521,10 +523,12 @@ app.get('/api/connections-mysql', (req, res) => {
                 (err) => {
                     if (err) {
                         console.error('Error al actualizar el estado de conexión:', err.message);
-                    } 
+                    } else {
+                        console.log("Usuarios inactivos desconectados después de 10 minutos.");
+                    }
                 }
             );
-        };
+        }
     );
 });
 
