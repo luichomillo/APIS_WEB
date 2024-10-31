@@ -483,6 +483,7 @@ app.post('/api/logout-mysql', (req, res) => {
     );
 });
 
+// *** VERIFICAR ESTADO DE CONEXION DE LOS USUARIOS ***
 app.get('/api/verify-status-mysql', (req, res) => {
     // Consulta para obtener usuarios conectados o vivos cuya última conexión fue hace más de 15 minutos
     const sql = `
@@ -517,6 +518,18 @@ app.get('/api/verify-status-mysql', (req, res) => {
         }
     });
 });
+
+// *** VERIFICA STATUS CADA 15' ***
+const axios = require('axios');
+setInterval(() => {
+    axios.get('http://localhost:3000/api/verify-status-mysql')
+        .then(response => {
+            console.log("Verificación de usuarios inactivos completada:", response.data);
+        })
+        .catch(error => {
+            console.error("Error en la verificación de usuarios inactivos:", error.message);
+        });
+}, 15 * 60 * 1000); // Cada 15 minutos
 
 // ******************************************************************
 app.listen(PORT, () => {
