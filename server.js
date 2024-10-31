@@ -596,6 +596,5 @@ app.post('/api/logout-mysql', (req, res) => {
         }
     );
 });
-
-	
+		
 // Final de server.js
