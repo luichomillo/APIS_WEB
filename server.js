@@ -509,8 +509,8 @@ app.get('/api/connections-mysql', (req, res) => {
                 console.error('Error al obtener conexiones:', err.message);
                 return res.status(500).json({ success: false, error: 'Error en el servidor' });
             }
-            const connections = results[0].connections;
-            console.log("Conexiones activas:", connections);
+            // const connections = results[0].connections;
+            // console.log("Conexiones activas:", connections);
             res.json({ connections });
 
             // Desconectar usuarios inactivos por más de 10 minutos
@@ -524,7 +524,7 @@ app.get('/api/connections-mysql', (req, res) => {
                     if (err) {
                         console.error('Error al actualizar el estado de conexión:', err.message);
                     } else {
-                        console.log("Usuarios inactivos desconectados después de 10 minutos.");
+                        // console.log("Usuarios inactivos desconectados después de 10 minutos.");
                     }
                 }
             );
@@ -546,8 +546,8 @@ app.get('/api/views-mysql', (req, res) => {
                 console.error('Error al obtener vistas:', err.message);
                 return res.status(500).json({ success: false, error: 'Error en el servidor' });
             }
-            const views = results[0].views;
-            console.log("Vistas totales:", views);
+            // const views = results[0].views;
+            // console.log("Vistas totales:", views);
             res.json({ views });
         }
     );
@@ -600,3 +600,4 @@ app.post('/api/logout-mysql', (req, res) => {
         }
     );
 });
+
