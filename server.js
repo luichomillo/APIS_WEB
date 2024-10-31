@@ -7,12 +7,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const admin = require("firebase-admin");
 
-// **** para RNEDER sacar estos comentarios!! ***
-// var serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
-// admin.initializeApp({
-//	  credential: admin.credential.cert(serviceAccount),
-//	  databaseURL: "https://luichomillo-28552-default-rtdb.firebaseio.com"
-//	});
+//**** para RNEDER sacar estos comentarios!! ***
+var serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
+admin.initializeApp({
+  	credential: admin.credential.cert(serviceAccount),
+  	databaseURL: "https://luichomillo-28552-default-rtdb.firebaseio.com"
+	});
 
 // Habilitar CORS para tu dominio
 app.use(cors({
