@@ -411,45 +411,6 @@ app.get('/api/migrate-usuarios', (req, res) => {
 });
 
 // *** Ruta para actualizar o insertar usuario en MySQL ***
-app.post('/api/usermysqlcopia', (req, res) => {
-    const { IP, USER } = req.body; // Obtener IP y USER del cuerpo de la solicitud
-    console.log("antes del update: IP ", IP, "USER ", USER);
-    
-    if (!IP || !USER) {
-        return res.status(400).json({ success: false, error: 'IP y USER son obligatorios' });
-    }
-
-    // Obtener fecha y hora actual y restar 3 horas
-    const fechaVivo = new Date(new Date().getTime() - (3 * 60 * 60 * 1000)).toISOString().slice(0, 19).replace('T', ' '); // Ajustar a UTC-3
-    
-    // Primero, intentamos actualizar al usuario existente
-    const updateQuery = `UPDATE Usuarios SET USER = ?, VIVO = 1, FECHA_VIVO = ? WHERE IP_USER = ?`;
-    mysqlConnection.query(updateQuery, [USER, fechaVivo, IP], (err, result) => {
-        if (err) {
-            console.error('Error al actualizar el usuario:', err.message);
-            return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
-        }
-
-        // Verificamos si se actualizó alguna fila
-        if (result.affectedRows === 0) {
-            // Si no se actualizó ninguna fila, insertemos un nuevo usuario
-            const insertQuery = `INSERT INTO Usuarios (IP_USER, USER, VIVO, FECHA_VIVO) VALUES (?, ?, 1, ?)`;
-            mysqlConnection.query(insertQuery, [IP, USER, fechaVivo], (err) => {
-                if (err) {
-                    console.error('Error al insertar el usuario:', err.message);
-                    return res.status(500).json({ success: false, error: 'Error al insertar en la base de datos' });
-                }
-
-                return res.json({ success: true, message: 'Usuario insertado exitosamente' });
-            });
-        } else {
-            // Si se actualizó, respondemos con un mensaje de éxito
-            return res.json({ success: true, message: 'Usuario actualizado exitosamente' });
-        }
-    });
-});
-
-// *** Ruta para actualizar o insertar usuario en MySQL ***
 app.post('/api/usermysql', (req, res) => {
     const { IP, USER } = req.body; // Obtener IP y USER del cuerpo de la solicitud
     console.log("antes del update: IP ", IP, "USER ", USER);
@@ -458,10 +419,10 @@ app.post('/api/usermysql', (req, res) => {
         return res.status(400).json({ success: false, error: 'IP y USER son obligatorios' });
     }
 
-    //const fechaVivo = new Date().toISOString().slice(0, 19).replace('T', ' '); // Obtener fecha y hora actual en formato 'YYYY-MM-DD HH:MM:SS'
-     // Obtener fecha y hora actual ajustada a UTC-3
-    const fechaVivo = new Date().toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' });
-    const fechaVivoFormatted = fechaVivo.replace('T', ' ').slice(0, 19); // Ajustar formato a 'YYYY-MM-DD HH:MM:SS'
+    let fechaHoy = new Date();
+    fechaHoy.setHours(fechaHoy.getHours() - 3); // Ajustar a UTC-3
+    //const fechaVivo = new Date().toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' });
+    const fechaVivo = fechaHoy.replace('T', ' ').slice(0, 19); // Ajustar formato a 'YYYY-MM-DD HH:MM:SS'
 	
     // Primero, intentamos actualizar al usuario existente
     const updateQuery = `UPDATE Usuarios SET USER = ?, VIVO = 1, FECHA_VIVO = ? WHERE IP_USER = ?`;
