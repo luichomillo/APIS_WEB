@@ -342,7 +342,8 @@ const mysqlConnection = mysql.createConnection({
     user: 'sql10741803',
     password: 'Kth7BbalP2',
     database: 'sql10741803',
-    port: 3306
+    port: 3306,
+    connectTimeout: 10000 // Timeout de conexión de 10 segundos
 });
 
 mysqlConnection.connect((err) => {
@@ -457,15 +458,13 @@ app.post('/api/usermysql', (req, res) => {
         return res.status(400).json({ success: false, error: 'IP y USER son obligatorios' });
     }
 
-    // Obtener fecha y hora actual y restar 3 horas
-    const fechaVivo = new Date(new Date().getTime() - (3 * 60 * 60 * 1000)).toISOString().slice(0, 19).replace('T', ' '); // Ajustar a UTC-3
-    console.log("Fecha y hora actual ajustada: ", fechaVivo); // Verificar el formato de la fecha
-
+    const fechaVivo = new Date().toISOString().slice(0, 19).replace('T', ' '); // Obtener fecha y hora actual en formato 'YYYY-MM-DD HH:MM:SS'
+    
     // Primero, intentamos actualizar al usuario existente
     const updateQuery = `UPDATE Usuarios SET USER = ?, VIVO = 1, FECHA_VIVO = ? WHERE IP_USER = ?`;
     mysqlConnection.query(updateQuery, [USER, fechaVivo, IP], (err, result) => {
         if (err) {
-            console.error('Error al actualizar el usuario:', err); // Mostrar el objeto de error completo
+            console.error('Error al actualizar el usuario:', err.message);
             return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
         }
 
@@ -475,7 +474,7 @@ app.post('/api/usermysql', (req, res) => {
             const insertQuery = `INSERT INTO Usuarios (IP_USER, USER, VIVO, FECHA_VIVO) VALUES (?, ?, 1, ?)`;
             mysqlConnection.query(insertQuery, [IP, USER, fechaVivo], (err) => {
                 if (err) {
-                    console.error('Error al insertar el usuario:', err); // Mostrar el objeto de error completo
+                    console.error('Error al insertar el usuario:', err.message);
                     return res.status(500).json({ success: false, error: 'Error al insertar en la base de datos' });
                 }
 
