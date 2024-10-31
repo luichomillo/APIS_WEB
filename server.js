@@ -132,7 +132,7 @@ app.post('/api/logout', (req, res) => {
     });
 });
 
-// *** API para verificar y desconectar usuarios inactivos ***
+// *** API para verificar y desconectar usuarios inactivos *** SQLITE3 ***
 app.get('/api/verify-status', (req, res) => {
     const sql = `
         SELECT * FROM USUARIOS
@@ -163,7 +163,7 @@ app.get('/api/verify-status', (req, res) => {
     });
 });
 
-// *** CHAT ***
+// *** CHAT *** 
 app.post('/api/chat/send', (req, res) => {
     const { user, message } = req.body;
 
@@ -182,7 +182,7 @@ app.post('/api/chat/send', (req, res) => {
         .catch((error) => res.status(500).json({ error: error.message }));
 });
 
-// *** Ruta para actualizar o insertar usuario ***
+// *** Ruta para actualizar o insertar usuario ***SQLITE3 ***
 app.post('/api/user', (req, res) => {
     const { IP, USER } = req.body; // Obtener IP y USER del cuerpo de la solicitud
 
@@ -481,6 +481,41 @@ app.post('/api/logout-mysql', (req, res) => {
             res.json({ success: true, message: "Usuario desconectado correctamente" });
         }
     );
+});
+
+app.get('/api/verify-status-mysql', (req, res) => {
+    // Consulta para obtener usuarios conectados o vivos cuya última conexión fue hace más de 15 minutos
+    const sql = `
+        SELECT * FROM Usuarios
+        WHERE (VIVO = 1)
+        AND TIMESTAMPDIFF(MINUTE, FECHA_VIVO, NOW()) >= 15
+    `;
+
+    mysqlConnection.query(sql, (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+
+        if (rows.length > 0) {
+            // Consulta para actualizar los usuarios inactivos
+            const updateSql = `
+                UPDATE Usuarios 
+                SET VIVO = 0 
+                WHERE VIVO = 1 
+                AND TIMESTAMPDIFF(MINUTE, FECHA_VIVO, NOW()) >= 15
+            `;
+            mysqlConnection.query(updateSql, (updateErr) => {
+                if (updateErr) {
+                    return res.status(500).json({ error: updateErr.message });
+                }
+                console.log("Usuarios inactivos actualizados correctamente.");
+                return res.json({ success: true, message: "Usuarios inactivos desconectados", inactiveUsers: rows });
+            });
+        } else {
+            console.log("No hay usuarios inactivos");
+            return res.json({ success: true, message: "No hay usuarios inactivos" });
+        }
+    });
 });
 
 // ******************************************************************
