@@ -616,6 +616,41 @@ app.post('/api/login-mysql', (req, res) => {
     );
 });
 
+// **** VERIFICAR SI EL USUARIO ESTA LOGUEADO POR IP **** MYSQL ****
+app.get('/api/verificarusuario', cors(credentialsCorsOptions), (req, res) => {
+    // Obtener la IP del parámetro de la URL
+    const { IP } = req.query;
+    console.log("Parámetro IP recibido: ", IP);
+
+    if (!IP) {
+        console.log("No se ha proporcionado una IP");
+        return res.json({ loggedIn: false });
+    }
+
+    // Consulta a la base de datos para verificar si el usuario está habilitado y vivo
+    db.query('SELECT HABILITADO, VIVO FROM USUARIOS WHERE IP_User = ?', [IP], (err, results) => {
+        if (err) {
+            console.error("Error al consultar la base de datos:", err.message);
+            return res.json({ loggedIn: false });
+        }
+
+        // Verificar si el usuario está habilitado y vivo
+        if (results.length > 0) {
+            const row = results[0]; // Tomar el primer resultado
+            if (row.HABILITADO === 1 && row.VIVO === 1) {
+                console.log("Usuario con IP ", IP, " está habilitado y conectado");
+                return res.json({ loggedIn: true });
+            } else {
+                console.log("Usuario con IP ", IP, " no está habilitado o conectado");
+                return res.json({ loggedIn: false });
+            }
+        } else {
+            console.log("No se encontró ningún usuario con la IP ", IP);
+            return res.json({ loggedIn: false });
+        }
+    });
+});
+
 // ******************************************************************
 app.listen(PORT, () => {
     console.log(`Servidor escuchando en el puerto ${PORT}`);
