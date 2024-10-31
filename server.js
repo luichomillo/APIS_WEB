@@ -576,10 +576,11 @@ const multer = require('multer');
 const upload = multer();
 
 app.post('/api/login-mysql', upload.none(), (req, res) => {
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+    // res.setHeader('Access-Control-Allow-Credentials', 'true');
+    // res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
 
     const { user, passw, IP } = req.body;
+    console.log("req.body ", req.body)	
     console.log("user:", user, "passw:", passw, "IP:", IP);
 
     // Consulta para verificar credenciales
