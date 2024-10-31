@@ -419,11 +419,10 @@ app.post('/api/usermysql', (req, res) => {
         return res.status(400).json({ success: false, error: 'IP y USER son obligatorios' });
     }
 
-    let fechaHoy = new Date();
+    const fechaHoy = new Date();
     fechaHoy.setHours(fechaHoy.getHours() - 3); // Ajustar a UTC-3
-    //const fechaVivo = new Date().toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' });
-    const fechaVivo = fechaHoy.replace('T', ' ').slice(0, 19); // Ajustar formato a 'YYYY-MM-DD HH:MM:SS'
-	
+    const fechaVivo = fechaHoy.toISOString().slice(0, 19).replace('T', ' '); // Obtener fecha y hora actual en formato 'YYYY-MM-DD HH:MM:SS'
+    	
     // Primero, intentamos actualizar al usuario existente
     const updateQuery = `UPDATE Usuarios SET USER = ?, VIVO = 1, FECHA_VIVO = ? WHERE IP_USER = ?`;
     mysqlConnection.query(updateQuery, [USER, fechaVivo, IP], (err, result) => {
