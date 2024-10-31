@@ -226,7 +226,7 @@ app.get('/api/chat/messages', (req, res) => {
         .catch(error => res.status(500).json({ error: error.message }));
 });
 
-// *** Ruta para obtener usuarios conectados ***
+// *** Ruta para obtener usuarios conectados *** SQLITE ***
 app.post('/api/conectados', (req, res) => {
     // Verificar la IP del cliente
     const { IP } = req.body;  // Obtiene la IP del cliente
@@ -530,6 +530,46 @@ setInterval(() => {
             console.error("Error en la verificación de usuarios inactivos:", error.message);
         });
 }, 15 * 60 * 1000); // Cada 15 minutos
+
+// *** CONECTADOS *** MYSQL
+app.post('/api/conectados-mysql', (req, res) => {
+    // Verificar la IP del cliente
+    const { IP } = req.body;
+    console.log("IP recibida en el servidor:", req.body);
+    const allowedIP = '190.244.137.138'; // Cambia esto por la IP permitida de tu servidor
+
+    if (IP !== allowedIP) {
+        console.log("IP: ", IP, " Permitida: ", allowedIP);
+        return res.status(403).json({ success: false, error: 'Acceso denegado' });
+    }
+
+    // Obtener la fecha de hoy en formato YYYY-MM-DD
+    let fechaHoy = new Date();
+    fechaHoy.setHours(fechaHoy.getHours() - 3); // Ajuste a UTC-3
+    let formattedDate = `${fechaHoy.getFullYear()}-${(fechaHoy.getMonth() + 1).toString().padStart(2, '0')}-${fechaHoy.getDate().toString().padStart(2, '0')}`;
+
+    // Consultar la base de datos para obtener usuarios conectados en la fecha actual
+    mysqlConnection.query(
+        `SELECT * FROM Usuarios WHERE DATE(FECHA_VIVO) = ?`,
+        [formattedDate],
+        (err, rows) => {
+            if (err) {
+                return res.status(500).json({ success: false, error: err.message });
+            }
+
+            console.log("formattedDate:", formattedDate, "rows:", rows);
+
+            // Filtrar usuarios según el estado de conexión
+            const conectados = rows.filter(row => row.VIVO === 1);
+            const noConectados = rows.filter(row => row.VIVO === 0);
+
+            console.log("conectados:", conectados);
+            console.log("noConectados:", noConectados);
+
+            return res.json({ success: true, conectados, noConectados });
+        }
+    );
+});
 
 // ******************************************************************
 app.listen(PORT, () => {
