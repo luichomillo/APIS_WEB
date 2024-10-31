@@ -38,7 +38,7 @@ app.get('/', (req, res) => {
     res.send('¡Servidor en funcionamiento!');
 });
 
-// API de prueba para consultar la base de datos
+// API de prueba para consultar la base de datos SQLITE3
 app.get('/api/test', (req, res) => {
     db.all(`SELECT * FROM USUARIOS ORDER BY Fecha_VIVO DESC`, (err, rows) => {
 	    if (err) {
@@ -67,7 +67,7 @@ process.on('SIGINT', () => {
     });
 });
 
-// *** Ruta para registrar la conexión de un usuario ***
+// *** Ruta para registrar la conexión de un usuario *** SQLITE3 ***
 app.post('/api/register-connection', (req, res) => {
     const { IP } = req.body;
     console.log("REGISTRAR CONEXION (POST) DE LA IP: ", IP);
@@ -111,6 +111,7 @@ app.post('/api/register-connection', (req, res) => {
         }
     });
 });
+
 // *** CONTADOR DE CONEXIONES ***
 app.get('/api/connections', (req, res) => {
 	// const { conexiones } = req.body;
@@ -449,3 +450,56 @@ app.post('/api/usermysql', (req, res) => {
         }
     });
 });
+
+// *** Registrar Conexión version MYSQL ***
+app.post('/api/register-connection-mysql', (req, res) => {
+    const { IP } = req.body;
+    console.log("REGISTRAR CONEXION (POST) DE LA IP:", IP);
+
+    // Ajusta la fecha a UTC-3
+    let fechaHoy = new Date();
+    fechaHoy.setHours(fechaHoy.getHours() - 3);
+    let formattedDate = fechaHoy.toISOString().slice(0, 19).replace('T', ' ');
+
+    if (!IP) {
+        return res.status(400).json({ success: false, error: 'POST: IP no proporcionada' });
+    }
+
+    mysqlConnection.query('SELECT * FROM Usuarios WHERE IP_USER = ?', [IP], (err, results) => {
+        if (err) {
+            console.error("ERROR EN EL SERVIDOR:", err);
+            return res.status(500).json({ success: false, error: 'Error en el servidor' });
+        }
+
+        if (results.length > 0) {
+            // Si ya existe un registro para esta IP, marcar como conectado
+            console.log("FECHA UPDATE:", formattedDate);
+            mysqlConnection.query(
+                `UPDATE Usuarios SET VIVO = 1, FECHA_VIVO = ? WHERE IP_USER = ?`,
+                [formattedDate, IP],
+                (err) => {
+                    if (err) {
+                        console.error("ERROR AL REGISTRAR CONEXION UPDATE:", err);
+                        return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
+                    }
+                    console.log("REGISTRAR CONEXION OK");
+                    return res.json({ success: true });
+                }
+            );
+        } else {
+            // Si la IP no existe, crear un nuevo usuario anónimo
+            console.log("FECHA INSERT:", formattedDate);
+            mysqlConnection.query(
+                `INSERT INTO Usuarios (USER, IP_USER, VIVO, FECHA_VIVO) VALUES (?, ?, ?, ?)`,
+                ['Anónimo', IP, 1, formattedDate],
+                (err) => {
+                    if (err) {
+                        console.error("ERROR AL REGISTRAR CONEXION INSERT:", err);
+                        return res.status(500).json({ success: false, error: 'Error al insertar en la base de datos' });
+                    }
+                    console.log("NUEVA IP");
+                    return res.json({ success: true });
+                }
+            );
+        }
+    });
