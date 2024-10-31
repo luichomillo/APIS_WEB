@@ -531,6 +531,3 @@ app.get('/api/connections-mysql', (req, res) => {
         }
     );
 });
-
-		
-// Final de server.js
