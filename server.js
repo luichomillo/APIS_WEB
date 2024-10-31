@@ -503,3 +503,4 @@ app.post('/api/register-connection-mysql', (req, res) => {
             );
         }
     });
+});
