@@ -553,51 +553,5 @@ app.get('/api/views-mysql', (req, res) => {
     );
 });
 
-// PING PARA VERIFICAR CONEXION *** MYSQL ***
-app.post('/api/ping-mysql', (req, res) => {
-    const { IP } = req.body;
 
-    if (!IP) {
-        return res.status(400).json({ success: false, error: 'IP no proporcionada' });
-    }
-
-    let fecha = new Date();
-    fecha.setHours(fecha.getHours() - 3); // Ajuste a UTC-3
-    let formattedDate = fecha.toISOString().slice(0, 19).replace('T', ' ');
-
-    mysqlConnection.query(
-        'UPDATE Usuarios SET FECHA_VIVO = ? WHERE IP_USER = ?',
-        [formattedDate, IP],
-        (err, result) => {
-            if (err) {
-                console.error('Error al actualizar FECHA_VIVO en el ping:', err.message);
-                return res.status(500).json({ success: false, error: 'Error en el servidor' });
-            }
-            console.log(`Ping exitoso para IP ${IP}`);
-            res.json({ success: true });
-        }
-    );
-});
-
-// LOG OUT DE USUARIOS *** MYSQL ***
-app.post('/api/logout-mysql', (req, res) => {
-    const { IP } = req.body;
-
-    if (!IP) {
-        return res.status(400).json({ success: false, error: 'IP no proporcionada' });
-    }
-
-    mysqlConnection.query(
-        'UPDATE Usuarios SET VIVO = 0 WHERE IP_USER = ?',
-        [IP],
-        (err, result) => {
-            if (err) {
-                console.error('Error al realizar logout:', err.message);
-                return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
-            }
-            console.log(`Usuario con IP ${IP} desconectado.`);
-            res.json({ success: true, message: "Usuario desconectado correctamente" });
-        }
-    );
-});
 
