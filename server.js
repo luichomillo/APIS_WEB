@@ -280,7 +280,7 @@ mysqlConnection.connect((err) => {
     console.log('Conexión a MySQL establecida');
 });
 
-// *** Ruta para actualizar o insertar usuario en MySQL *** CHECK
+// *** Ruta para actualizar o insertar usuario *** MySQL *** 
 app.post('/api/usermysql', (req, res) => {
     const { IP, USER } = req.body; // Obtener IP y USER del cuerpo de la solicitud
     console.log("antes del update: IP ", IP, "USER ", USER);
@@ -292,19 +292,44 @@ app.post('/api/usermysql', (req, res) => {
     const fechaHoy = new Date();
     fechaHoy.setHours(fechaHoy.getHours() - 3); // Ajustar a UTC-3
     const fechaVivo = fechaHoy.toISOString().slice(0, 19).replace('T', ' '); // Obtener fecha y hora actual en formato 'YYYY-MM-DD HH:MM:SS'
-    	
+
     // Primero, intentamos actualizar al usuario existente
-    const updateQuery = `UPDATE Usuarios SET USER = ?, VIVO = 1, FECHA_VIVO = ? WHERE IP_USER = ?`;
-    mysqlConnection.query(updateQuery, [USER, fechaVivo, IP], (err, result) => {
+    const checkQuery = `SELECT HABILITADO FROM Usuarios WHERE IP_USER = ?`;
+    
+    mysqlConnection.query(checkQuery, [IP], (err, results) => {
         if (err) {
-            console.error('Error al actualizar el usuario:', err.message);
-            return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
+            console.error('Error al consultar el usuario:', err.message);
+            return res.status(500).json({ success: false, error: 'Error al consultar la base de datos' });
         }
 
-        // Verificamos si se actualizó alguna fila
-        if (result.affectedRows === 0) {
-            // Si no se actualizó ninguna fila, insertemos un nuevo usuario
-            const insertQuery = `INSERT INTO Usuarios (IP_USER, USER, VIVO, FECHA_VIVO) VALUES (?, ?, 1, ?)`;
+        // Verificamos si se encontró el usuario
+        if (results.length > 0) {
+            const habilitado = results[0].HABILITADO;
+
+            // Si el usuario está habilitado, no actualizamos el campo USER
+            if (habilitado === 1) {
+                const updateQuery = `UPDATE Usuarios SET VIVO = 1, FECHA_VIVO = ? WHERE IP_USER = ?`;
+                mysqlConnection.query(updateQuery, [fechaVivo, IP], (err) => {
+                    if (err) {
+                        console.error('Error al actualizar el estado del usuario:', err.message);
+                        return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
+                    }
+                    return res.json({ success: true, message: 'Estado del usuario actualizado exitosamente' });
+                });
+            } else {
+                // Si no está habilitado, actualizamos el campo USER
+                const updateQuery = `UPDATE Usuarios SET USER = ?, VIVO = 1, FECHA_VIVO = ? WHERE IP_USER = ?`;
+                mysqlConnection.query(updateQuery, [USER, fechaVivo, IP], (err) => {
+                    if (err) {
+                        console.error('Error al actualizar el usuario:', err.message);
+                        return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
+                    }
+                    return res.json({ success: true, message: 'Usuario actualizado exitosamente' });
+                });
+            }
+        } else {
+            // Si no se encontró el usuario, insertamos un nuevo usuario
+            const insertQuery = `INSERT INTO Usuarios (IP_USER, USER, VIVO, FECHA_VIVO, HABILITADO) VALUES (?, ?, 1, ?, 0)`;
             mysqlConnection.query(insertQuery, [IP, USER, fechaVivo], (err) => {
                 if (err) {
                     console.error('Error al insertar el usuario:', err.message);
@@ -313,9 +338,6 @@ app.post('/api/usermysql', (req, res) => {
 
                 return res.json({ success: true, message: 'Usuario insertado exitosamente' });
             });
-        } else {
-            // Si se actualizó, respondemos con un mensaje de éxito
-            return res.json({ success: true, message: 'Usuario actualizado exitosamente' });
         }
     });
 });
