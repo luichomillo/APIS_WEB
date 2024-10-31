@@ -622,7 +622,7 @@ app.post('/api/login-mysql', (req, res) => {
                 let formattedDate = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getDate().toString().padStart(2, '0')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
 
                 mysqlConnection.query(
-                    `UPDATE Usuarios SET VIVO = 1, FECHA_VIVO = ?, IP_USER = ? WHERE idUSER = ?`,
+                    `UPDATE Usuarios SET HABILITADO = 1, VIVO = 1, FECHA_VIVO = ?, IP_USER = ? WHERE idUSER = ?`,
                     [formattedDate, IP, row.idUSER],
                     (err) => {
                         if (err) {
