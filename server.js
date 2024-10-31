@@ -650,7 +650,7 @@ app.get('/api/verificarusuario', (req, res) => {
     }
 
     // Consulta a la base de datos para verificar si el usuario está habilitado y vivo
-    db.query('SELECT HABILITADO, VIVO FROM USUARIOS WHERE IP_User = ?', [IP], (err, results) => {
+    mysqlConnection.query('SELECT HABILITADO, VIVO FROM USUARIOS WHERE IP_User = ?', [IP], (err, results) => {
         if (err) {
             console.error("Error al consultar la base de datos:", err.message);
             return res.json({ loggedIn: false });
