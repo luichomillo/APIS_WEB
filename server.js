@@ -556,6 +556,7 @@ app.get('/api/verify-status-mysql', (req, res) => {
                 WHERE VIVO = 1 
                 AND TIMESTAMPDIFF(MINUTE, FECHA_VIVO, NOW()) >= 15
             `;
+	    console.log("updateSql verify-status: ", updateSql);
             mysqlConnection.query(updateSql, (updateErr) => {
                 if (updateErr) {
                     return res.status(500).json({ error: updateErr.message });
@@ -578,7 +579,7 @@ setInterval(() => {
             console.log("Verificación de usuarios inactivos completada:", response.data);
         })
         .catch(error => {
-            console.error("Error en la verificación de usuarios inactivos:", error.message);
+            console.log("Error en la verificación de usuarios inactivos:", error.message);
         });
 }, 15 * 60 * 1000); // Cada 15 minutos
 
@@ -648,6 +649,7 @@ app.post('/api/login-mysql', (req, res) => {
               
                 // Marcar al usuario como conectado
                 let fecha = new Date();
+		fecha.setHours(fechaHoy.getHours() - 3); // Ajustar a UTC-3
                 let formattedDate = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getDate().toString().padStart(2, '0')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
 
                 mysqlConnection.query(
