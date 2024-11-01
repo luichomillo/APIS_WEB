@@ -859,10 +859,33 @@ cron.schedule('*/2 * * * *', async () => {
     } catch (error) {
         console.error('Error al hacer ping:', error.message);
     }
+    axios.get('https://apis-web-1.onrender.com/api/verify-status-mysql')
+	     .then(response => {
+	     	console.log("Verificación de usuarios inactivos completada:", response.data);
+	     })
+	     .catch(error => {
+	      	console.log("Error en la verificación de usuarios inactivos:", error.message);
+             });
 });
 
 app.get('/api/ping-activador', (req, res) => {
     res.json({ success: true, message: 'Ping recibido' });
+});
+
+// *** GUARDAR AVATAR ***
+app.post('/api/guardar-avatar', (req, res) => {
+    const { user, ip_user, avatar } = req.body;
+
+    // Aquí deberías implementar la lógica para guardar el avatar en tu base de datos
+    const query = 'UPDATE Usuarios SET AVATAR = ? WHERE USER = ? AND  IP_USER = ?';
+    
+    mysqlConnection.query(query, [avatar, user, ip_user], (error, results) => {
+        if (error) {
+            console.log('Error al guardar el avatar:', error);
+            return res.status(500).json({ success: false, error: 'Error al guardar el avatar' });
+        }
+        res.json({ success: true });
+    });
 });
 
 // ******************************************************************
