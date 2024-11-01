@@ -683,16 +683,19 @@ app.post('/api/register', (req, res) => {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     const { USER, MAIL, IP } = req.body;
-    console.log("Datos recibidos: USER ", USER, " MAIL ", MAIL, " IP ", IP);
-
+    // console.log("Datos recibidos: USER ", USER, " MAIL ", MAIL, " IP ", IP);
+    	
     if (!USER || !MAIL || !IP) {
         return res.status(400).json({ success: false, message: 'USER, MAIL e IP son obligatorios' });
     }
 
     // Generar una contraseña aleatoria de 6 números
     const password = Math.floor(100000 + Math.random() * 900000).toString();
-    console.log("Contraseña generada: ", password);
-
+    // console.log("Contraseña generada: ", password);
+    const textoMail = `Ingreso a la cuenta de LuichoTV -> https://luichomillo.freeddns.org/LuichoTV.html
+	Usuario: ${USER}
+	Contraseña: ${password}`;
+	    
     // Crear la fecha y hora actuales
     const fechaHoy = new Date();
     fechaHoy.setHours(fechaHoy.getHours() - 3); // Ajustar a UTC-3
@@ -719,8 +722,8 @@ app.post('/api/register', (req, res) => {
                     return res.status(500).json({ success: false, message: 'Error al actualizar usuario en la base de datos' });
                 }
 
-                sendEmail(MAIL, password, 'Usuario registrado exitosamente'); // Envía la contraseña por correo
-                return res.json({ success: true, message: 'Usuario actualizado exitosamente' });
+                sendEmail(MAIL, password, 'Usuario registrado exitosamente', textoMail); // Envía la contraseña por correo
+                return res.json({ success: true, message: 'Usuario actualizado exitosamente. Contraseña enviada al mail: ' + MAIL  });
             });
         } else {
             // Si el correo no existe, insertar un nuevo registro
@@ -734,15 +737,15 @@ app.post('/api/register', (req, res) => {
                     return res.status(500).json({ success: false, message: 'Error al insertar usuario en la base de datos' });
                 }
 
-                sendEmail(MAIL, password, 'Usuario registrado exitosamente'); // Envía la contraseña por correo
-                return res.json({ success: true, message: 'Usuario registrado exitosamente' });
+                sendEmail(MAIL, password, 'Usuario registrado exitosamente', textoMail); // Envía la contraseña por correo
+                return res.json({ success: true, message: 'Usuario registrado exitosamente. Contraseña enviada al mail: ' + MAIL });
             });
         }
     });
 });
 
 // Función para enviar el correo
-async function sendEmail(mail, password, sujeto) {
+async function sendEmail(mail, password, sujeto, textoMail) {
     let transporter = nodemailer.createTransport({
         service: 'gmail', // O el servicio de correo que uses
         auth: {
@@ -755,7 +758,7 @@ async function sendEmail(mail, password, sujeto) {
         from: 'lvallejos120@gmail.com',
         to: mail,
         subject: sujeto,
-        text: `Tu contraseña es: ${password}`
+        text: textoMail // `Tu contraseña es: ${password}`
     };
 
     await transporter.sendMail(mailOptions);
@@ -793,19 +796,22 @@ app.post('/api/reset-password', (req, res) => {
 
         // Generar una nueva contraseña aleatoria de 6 números
         const newPassword = Math.floor(100000 + Math.random() * 900000).toString();
-        console.log("Nueva contraseña generada: ", newPassword);
-
+        // console.log("Nueva contraseña generada: ", newPassword);
+	const textoMail = `Ingreso a la cuenta de LuichoTV -> https://luichomillo.freeddns.org/LuichoTV.html
+		Usuario: ${USER}
+		Contraseña: ${newPassword}`;
+	    
         // Actualizar la contraseña en la base de datos
         const updatePasswordQuery = 'UPDATE Usuarios SET PASSW = ? WHERE USER = ? AND MAIL = ?';
         console.log('update', USER, MAIL);
         mysqlConnection.query(updatePasswordQuery, [newPassword, USER, MAIL], (error) => {
             if (error) {
                 console.error("Error al actualizar la contraseña en la base de datos:", error);
-                return res.status(500).json({ success: false, error: 'Error al interactuar con la base de datos' });
+                return res.status(500).json({ success: false, error: 'Error al actualizar la contraseña en la base de datos.' });
             }
 		console.log('exito');
-            sendEmail(MAIL, newPassword, 'Nueva contraseña generada'); // Envía la nueva contraseña por correo
-            return res.json({ success: true, message: 'Nueva contraseña enviada al correo' });
+            sendEmail(MAIL, newPassword, 'Nueva contraseña generada', textoMail); // Envía la nueva contraseña por correo
+            return res.json({ success: true, message: 'Nueva contraseña enviada al correo ' + MAIL });
         });
     });
 });
