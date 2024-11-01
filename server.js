@@ -635,12 +635,13 @@ app.post('/api/login-mysql', (req, res) => {
     console.log("user:", user, "passw:", passw, "IP:", IP);
 
     // Consulta para verificar credenciales
+    
     mysqlConnection.query(
         'SELECT * FROM Usuarios WHERE USER = ? AND PASSW = ?',
         [user, passw],
         (err, results) => {
             if (err) {
-                return res.status(500).json({ success: false, error: 'Error en el servidor' });
+                return res.status(500).json({ success: false, error: 'Error en el servidor ' + err.message });
             }
 
             if (results.length > 0) {
