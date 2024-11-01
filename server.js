@@ -707,15 +707,7 @@ app.post('/api/register', (req, res) => {
         }
 
         if (rows.length > 0) {
-            // Si el correo ya existe, verificar si el USER ya está registrado
-            const existingUser = rows[0];
-
-            // Si el USER ya existe y es el mismo, retornamos un mensaje
-            if (existingUser.USER === USER) {
-                return res.json({ success: false, message: 'El usuario ya existe con este correo' });
-            }
-
-            // Si el USER es diferente, hacemos un UPDATE
+            // Si el correo ya existe, actualizar el registro
             const updateQuery = `
                 UPDATE Usuarios 
                 SET USER = ?, PASSW = ?, IP_USER = ?, CATEGORIA = 'INVITADO', HABILITADO = 1, VIVO = 1, FECHA_VIVO = ?
