@@ -702,8 +702,8 @@ app.post('/api/register', (req, res) => {
     const checkEmailQuery = 'SELECT * FROM Usuarios WHERE MAIL = ?';
     mysqlConnection.query(checkEmailQuery, [MAIL], (error, rows) => {
         if (error) {
-            console.error("Error al verificar el correo en la base de datos:", error);
-            return res.status(500).json({ success: false, message: 'Error al interactuar con la base de datos' });
+            console.log("Error al verificar el correo en la base de datos:", error, "mail: ", MAIL);
+            return res.status(500).json({ success: false, message: 'Error al verificar el correo en la base de datos' });
         }
 
         if (rows.length > 0) {
@@ -715,8 +715,8 @@ app.post('/api/register', (req, res) => {
             `;
             mysqlConnection.query(updateQuery, [USER, password, IP, fechaVivo, MAIL], (error) => {
                 if (error) {
-                    console.error("Error al actualizar usuario en la base de datos:", error);
-                    return res.status(500).json({ success: false, message: 'Error al interactuar con la base de datos' });
+                    console.log("Error al actualizar usuario en la base de datos:", error);
+                    return res.status(500).json({ success: false, message: 'Error al actualizar usuario en la base de datos' });
                 }
 
                 sendEmail(MAIL, password, 'Usuario registrado exitosamente'); // Envía la contraseña por correo
@@ -731,7 +731,7 @@ app.post('/api/register', (req, res) => {
             mysqlConnection.query(insertQuery, [USER, password, MAIL, IP, fechaVivo], (error) => {
                 if (error) {
                     console.error("Error al insertar usuario en la base de datos:", error);
-                    return res.status(500).json({ success: false, message: 'Error al interactuar con la base de datos' });
+                    return res.status(500).json({ success: false, message: 'Error al insertar usuario en la base de datos' });
                 }
 
                 sendEmail(MAIL, password, 'Usuario registrado exitosamente'); // Envía la contraseña por correo
