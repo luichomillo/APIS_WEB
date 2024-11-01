@@ -686,71 +686,66 @@ app.post('/api/register', (req, res) => {
     console.log("Datos recibidos: USER ", USER, " MAIL ", MAIL, " IP ", IP);
 
     if (!USER || !MAIL || !IP) {
-        return res.status(400).json({ success: false, error: 'USER, MAIL e IP son obligatorios' });
+        return res.status(400).json({ success: false, message: 'USER, MAIL e IP son obligatorios' });
     }
 
-    // Verificar si el nombre de usuario ya existe
-    const checkUserQuery = 'SELECT * FROM Usuarios WHERE USER = ?';
-    mysqlConnection.query(checkUserQuery, [USER], (error, rows) => {
+    // Generar una contraseña aleatoria de 6 números
+    const password = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log("Contraseña generada: ", password);
+
+    // Crear la fecha y hora actuales
+    const fechaHoy = new Date();
+    fechaHoy.setHours(fechaHoy.getHours() - 3); // Ajustar a UTC-3
+    const fechaVivo = fechaHoy.toISOString().slice(0, 19).replace('T', ' '); // Formato 'YYYY-MM-DD HH:MM:SS'
+
+    // Verificar si el correo ya existe
+    const checkEmailQuery = 'SELECT * FROM Usuarios WHERE MAIL = ?';
+    mysqlConnection.query(checkEmailQuery, [MAIL], (error, rows) => {
         if (error) {
-            console.error("Error al verificar el nombre de usuario en la base de datos:", error);
-            return res.status(500).json({ success: false, error: 'Error al interactuar con la base de datos' });
+            console.error("Error al verificar el correo en la base de datos:", error);
+            return res.status(500).json({ success: false, message: 'Error al interactuar con la base de datos' });
         }
 
         if (rows.length > 0) {
-            return res.status(400).json({ success: false, error: 'El nombre de usuario ya está en uso' });
+            // Si el correo ya existe, verificar si el USER ya está registrado
+            const existingUser = rows[0];
+
+            // Si el USER ya existe y es el mismo, retornamos un mensaje
+            if (existingUser.USER === USER) {
+                return res.json({ success: false, message: 'El usuario ya existe con este correo' });
+            }
+
+            // Si el USER es diferente, hacemos un UPDATE
+            const updateQuery = `
+                UPDATE Usuarios 
+                SET USER = ?, PASSW = ?, IP_USER = ?, CATEGORIA = 'INVITADO', HABILITADO = 1, VIVO = 1, FECHA_VIVO = ?
+                WHERE MAIL = ?
+            `;
+            mysqlConnection.query(updateQuery, [USER, password, IP, fechaVivo, MAIL], (error) => {
+                if (error) {
+                    console.error("Error al actualizar usuario en la base de datos:", error);
+                    return res.status(500).json({ success: false, message: 'Error al interactuar con la base de datos' });
+                }
+
+                sendEmail(MAIL, password, 'Usuario registrado exitosamente'); // Envía la contraseña por correo
+                return res.json({ success: true, message: 'Usuario actualizado exitosamente' });
+            });
+        } else {
+            // Si el correo no existe, insertar un nuevo registro
+            const insertQuery = `
+                INSERT INTO Usuarios (USER, PASSW, MAIL, IP_USER, CATEGORIA, HABILITADO, VIVO, FECHA_VIVO) 
+                VALUES (?, ?, ?, ?, 'INVITADO', 1, 1, ?)
+            `;
+            mysqlConnection.query(insertQuery, [USER, password, MAIL, IP, fechaVivo], (error) => {
+                if (error) {
+                    console.error("Error al insertar usuario en la base de datos:", error);
+                    return res.status(500).json({ success: false, message: 'Error al interactuar con la base de datos' });
+                }
+
+                sendEmail(MAIL, password, 'Usuario registrado exitosamente'); // Envía la contraseña por correo
+                return res.json({ success: true, message: 'Usuario registrado exitosamente' });
+            });
         }
-
-        // Generar una contraseña aleatoria de 6 números
-        const password = Math.floor(100000 + Math.random() * 900000).toString();
-        console.log("Contraseña generada: ", password);
-
-        // Crear la fecha y hora actuales
-        const fechaHoy = new Date();
-        fechaHoy.setHours(fechaHoy.getHours() - 3); // Ajustar a UTC-3
-        const fechaVivo = fechaHoy.toISOString().slice(0, 19).replace('T', ' '); // Formato 'YYYY-MM-DD HH:MM:SS'
-
-        // Verificar si el correo ya existe
-        const checkEmailQuery = 'SELECT * FROM Usuarios WHERE MAIL = ?';
-        mysqlConnection.query(checkEmailQuery, [MAIL], (error, rows) => {
-            if (error) {
-                console.error("Error al verificar el correo en la base de datos:", error);
-                return res.status(500).json({ success: false, error: 'Error al interactuar con la base de datos' });
-            }
-
-            if (rows.length > 0) {
-                // Si el correo ya existe, actualizar el registro
-                const updateQuery = `
-                    UPDATE Usuarios 
-                    SET USER = ?, PASSW = ?, IP_USER = ?, CATEGORIA = 'INVITADO', HABILITADO = 1, VIVO = 1, FECHA_VIVO = ?
-                    WHERE MAIL = ?
-                `;
-                mysqlConnection.query(updateQuery, [USER, password, IP, fechaVivo, MAIL], (error) => {
-                    if (error) {
-                        console.error("Error al actualizar usuario en la base de datos:", error);
-                        return res.status(500).json({ success: false, error: 'Error al interactuar con la base de datos' });
-                    }
-
-                    sendEmail(MAIL, password, 'Usuario registrado exitosamente'); // Envía la contraseña por correo
-                    return res.json({ success: true, message: 'Usuario actualizado exitosamente' });
-                });
-            } else {
-                // Si el correo no existe, insertar un nuevo registro
-                const insertQuery = `
-                    INSERT INTO Usuarios (USER, PASSW, MAIL, IP_USER, CATEGORIA, HABILITADO, VIVO, FECHA_VIVO) 
-                    VALUES (?, ?, ?, ?, 'INVITADO', 1, 1, ?)
-                `;
-                mysqlConnection.query(insertQuery, [USER, password, MAIL, IP, fechaVivo], (error) => {
-                    if (error) {
-                        console.error("Error al insertar usuario en la base de datos:", error);
-                        return res.status(500).json({ success: false, error: 'Error al interactuar con la base de datos' });
-                    }
-
-                    sendEmail(MAIL, password, 'Usuario registrado exitosamente'); // Envía la contraseña por correo
-                    return res.json({ success: true, message: 'Usuario registrado exitosamente' });
-                });
-            }
-        });
     });
 });
 
