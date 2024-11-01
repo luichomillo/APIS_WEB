@@ -572,16 +572,16 @@ app.get('/api/verify-status-mysql', (req, res) => {
 });
 
 // *** VERIFICA STATUS CADA 15' ***
-const axios = require('axios');
-setInterval(() => {
-    axios.get('https://apis-web-1.onrender.com/api/verify-status-mysql')
-        .then(response => {
-            console.log("Verificación de usuarios inactivos completada:", response.data);
-        })
-        .catch(error => {
-            console.log("Error en la verificación de usuarios inactivos:", error.message);
-        });
-}, 15 * 60 * 1000); // Cada 15 minutos
+//const axios = require('axios');
+//setInterval(() => {
+//    axios.get('https://apis-web-1.onrender.com/api/verify-status-mysql')
+//        .then(response => {
+//            console.log("Verificación de usuarios inactivos completada:", response.data);
+//        })
+//        .catch(error => {
+//            console.log("Error en la verificación de usuarios inactivos:", error.message);
+//        });
+//}, 15 * 60 * 1000); // Cada 15 minutos
 
 // *** CONECTADOS *** MYSQL
 app.post('/api/conectados-mysql', (req, res) => {
@@ -628,8 +628,8 @@ const multer = require('multer');
 const upload = multer();
 
 app.post('/api/login-mysql', (req, res) => {
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+    // res.setHeader('Access-Control-Allow-Credentials', 'true');
+    // res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
 	
     const { user, passw, IP } = req.body;
     console.log("user:", user, "passw:", passw, "IP:", IP);
