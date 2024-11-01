@@ -640,6 +640,9 @@ app.post('/api/login-mysql', (req, res) => {
 
 // **** VERIFICAR SI EL USUARIO ESTA LOGUEADO POR IP **** MYSQL ****
 app.get('/api/verificarusuario', (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', 'https://luichomillo.freeddns.org');
+    res.setHeader('Access-Control-Allow-Methods', 'POST');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     // Obtener la IP del parámetro de la URL
     const { IP } = req.query;
     console.log("Parámetro IP recibido: ", IP);
@@ -675,6 +678,10 @@ app.get('/api/verificarusuario', (req, res) => {
 
 // *** REGISTRAR NUEVO USUARIO *** MYSQL
 app.post('/api/register', async (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', 'https://luichomillo.freeddns.org');
+    res.setHeader('Access-Control-Allow-Methods', 'POST');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+	
     const { USER, MAIL, IP } = req.body;
     console.log("Datos recibidos: USER ", USER, " MAIL ", MAIL, " IP ", IP);
 
