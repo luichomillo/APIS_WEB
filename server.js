@@ -847,6 +847,22 @@ app.post('/api/reset-password', (req, res) => {
     });
 });
 
+// **** MANTENER ACTIVO A RENDER *****
+const cron = require('node-cron');
+
+// Configura el cron para hacer un ping cada 2 minutos
+cron.schedule('*/2 * * * *', async () => {
+    try {
+        const response = await axios.get('https://apis-web-1.onrender.com/api/ping-activador');
+        console.log('Ping exitoso:', response.data);
+    } catch (error) {
+        console.error('Error al hacer ping:', error.message);
+    }
+});
+
+app.get('/api/ping-activador', (req, res) => {
+    res.json({ success: true, message: 'Ping recibido' });
+});
 
 // ******************************************************************
 app.listen(PORT, () => {
