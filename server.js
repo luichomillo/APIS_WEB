@@ -890,7 +890,7 @@ app.post('/api/guardar-avatar', (req, res) => {
 
 // *** CARGAR AVATAR ***
 app.get('/api/cargar-avatar', (req, res) => {
-    const { user, ip_user } = req.body;
+    const { user, ip_user } = req.query;
     console.log("Cargar avatar: USER ", user, " IP ", ip_user);
 	
     // Aquí deberías implementar la lógica para obtener el avatar del usuario
