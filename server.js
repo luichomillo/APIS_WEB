@@ -677,11 +677,11 @@ app.get('/api/verificarusuario', (req, res) => {
 });
 
 // *** REGISTRAR NUEVO USUARIO *** MYSQL
-app.post('/api/register', async (req, res) => {
+app.post('/api/register', (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', 'https://luichomillo.freeddns.org');
     res.setHeader('Access-Control-Allow-Methods', 'POST');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-	
+
     const { USER, MAIL, IP } = req.body;
     console.log("Datos recibidos: USER ", USER, " MAIL ", MAIL, " IP ", IP);
 
@@ -690,7 +690,7 @@ app.post('/api/register', async (req, res) => {
     }
 
     // Generar una contraseña aleatoria de 6 números
-    const password = Math.floor(100000 + Math.random() * 900000).toString(); // Genera un número aleatorio de 6 dígitos
+    const password = Math.floor(100000 + Math.random() * 900000).toString();
     console.log("Contraseña generada: ", password);
 
     // Crear la fecha y hora actuales
@@ -700,38 +700,49 @@ app.post('/api/register', async (req, res) => {
 
     // Verificar si el correo ya existe
     const checkEmailQuery = 'SELECT * FROM Usuarios WHERE MAIL = ?';
-    
-    try {
-        const [rows] = await mysqlConnection.promise().query(checkEmailQuery, [MAIL]); // Usar promesas para la consulta
-        
+    mysqlConnection.query(checkEmailQuery, [MAIL], (error, rows) => {
+        if (error) {
+            console.error("Error al verificar el correo en la base de datos:", error);
+            return res.status(500).json({ success: false, error: 'Error al interactuar con la base de datos' });
+        }
+
         if (rows.length > 0) {
-            // Si el correo ya existe, actualizamos el registro
+            // Si el correo ya existe, actualizar el registro
             const updateQuery = `
                 UPDATE Usuarios 
                 SET USER = ?, PASSW = ?, IP_USER = ?, CATEGORIA = 'INVITADO', HABILITADO = 1, VIVO = 1, FECHA_VIVO = ?
                 WHERE MAIL = ?
             `;
-            await mysqlConnection.promise().query(updateQuery, [USER, password, IP, fechaVivo, MAIL]); // Usar promesas para la actualización
-            await sendEmail(MAIL, password); // Envía la contraseña por correo
-            return res.json({ success: true, message: 'Usuario actualizado exitosamente' });
+            mysqlConnection.query(updateQuery, [USER, password, IP, fechaVivo, MAIL], (error) => {
+                if (error) {
+                    console.error("Error al actualizar usuario en la base de datos:", error);
+                    return res.status(500).json({ success: false, error: 'Error al interactuar con la base de datos' });
+                }
+
+                sendEmail(MAIL, password,'Registro exitoso'); // Envía la contraseña por correo
+                return res.json({ success: true, message: 'Usuario actualizado exitosamente' });
+            });
         } else {
-            // Si el correo no existe, insertamos un nuevo registro
+            // Si el correo no existe, insertar un nuevo registro
             const insertQuery = `
                 INSERT INTO Usuarios (USER, PASSW, MAIL, IP_USER, CATEGORIA, HABILITADO, VIVO, FECHA_VIVO) 
                 VALUES (?, ?, ?, ?, 'INVITADO', 1, 1, ?)
             `;
-            await mysqlConnection.promise().query(insertQuery, [USER, password, MAIL, IP, fechaVivo]); // Usar promesas para la inserción
-            await sendEmail(MAIL, password); // Envía la contraseña por correo
-            return res.json({ success: true, message: 'Usuario registrado exitosamente' });
+            mysqlConnection.query(insertQuery, [USER, password, MAIL, IP, fechaVivo], (error) => {
+                if (error) {
+                    console.error("Error al insertar usuario en la base de datos:", error);
+                    return res.status(500).json({ success: false, error: 'Error al interactuar con la base de datos' });
+                }
+
+                sendEmail(MAIL, password,'Registro exitoso'); // Envía la contraseña por correo
+                return res.json({ success: true, message: 'Usuario registrado exitosamente' });
+            });
         }
-    } catch (err) {
-        console.error('Error al interactuar con la base de datos:', err.message);
-        return res.status(500).json({ success: false, error: 'Error al interactuar con la base de datos' });
-    }
+    });
 });
 
 // Función para enviar el correo
-async function sendEmail(to, password) {
+async function sendEmail(mail, password, sujeto) {
     let transporter = nodemailer.createTransport({
         service: 'gmail', // O el servicio de correo que uses
         auth: {
@@ -742,13 +753,78 @@ async function sendEmail(to, password) {
 
     let mailOptions = {
         from: 'lvallejos120@gmail.com',
-        to: to,
-        subject: 'Registro exitoso',
+        to: mail,
+        subject: sujeto,
         text: `Tu contraseña es: ${password}`
     };
 
     await transporter.sendMail(mailOptions);
 }
+
+// *** RESETEAR PASSWORD *** MYSQL
+app.post('/api/reset-password', (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', 'https://luichomillo.freeddns.org');
+    res.setHeader('Access-Control-Allow-Methods', 'POST');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    const { USER, MAIL, IP } = req.body;
+    console.log("Datos recibidos: USER ", USER, " MAIL ", MAIL, " IP ", IP);
+
+    if (!USER || !MAIL || !IP) {
+        return res.status(400).json({ success: false, error: 'USER, MAIL e IP son obligatorios' });
+    }
+
+    // Generar una contraseña aleatoria de 6 números
+    const password = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log("Contraseña generada: ", password);
+
+    // Crear la fecha y hora actuales
+    const fechaHoy = new Date();
+    fechaHoy.setHours(fechaHoy.getHours() - 3); // Ajustar a UTC-3
+    const fechaVivo = fechaHoy.toISOString().slice(0, 19).replace('T', ' '); // Formato 'YYYY-MM-DD HH:MM:SS'
+
+    // Verificar si el correo ya existe
+    const checkEmailQuery = 'SELECT * FROM Usuarios WHERE MAIL = ?';
+    mysqlConnection.query(checkEmailQuery, [MAIL], (error, rows) => {
+        if (error) {
+            console.error("Error al verificar el correo en la base de datos:", error);
+            return res.status(500).json({ success: false, error: 'Error al interactuar con la base de datos' });
+        }
+
+        if (rows.length > 0) {
+            // Si el correo ya existe, actualizar el registro
+            const updateQuery = `
+                UPDATE Usuarios 
+                SET USER = ?, PASSW = ?, IP_USER = ?, CATEGORIA = 'INVITADO', HABILITADO = 1, VIVO = 1, FECHA_VIVO = ?
+                WHERE MAIL = ?
+            `;
+            mysqlConnection.query(updateQuery, [USER, password, IP, fechaVivo, MAIL], (error) => {
+                if (error) {
+                    console.error("Error al actualizar usuario en la base de datos:", error);
+                    return res.status(500).json({ success: false, error: 'Error al interactuar con la base de datos' });
+                }
+
+                sendEmail(MAIL, password, 'Nueva contraseña'); // Envía la contraseña por correo
+                return res.json({ success: true, message: 'Usuario actualizado exitosamente' });
+            });
+        } else {
+            // Si el correo no existe, insertar un nuevo registro
+            const insertQuery = `
+                INSERT INTO Usuarios (USER, PASSW, MAIL, IP_USER, CATEGORIA, HABILITADO, VIVO, FECHA_VIVO) 
+                VALUES (?, ?, ?, ?, 'INVITADO', 1, 1, ?)
+            `;
+            mysqlConnection.query(insertQuery, [USER, password, MAIL, IP, fechaVivo], (error) => {
+                if (error) {
+                    console.error("Error al insertar usuario en la base de datos:", error);
+                    return res.status(500).json({ success: false, error: 'Error al interactuar con la base de datos' });
+                }
+
+                sendEmail(MAIL, password,'Nueva contraseña'); // Envía la contraseña por correo
+                return res.json({ success: true, message: 'Password de Usuario reseteado exitosamente' });
+            });
+        }
+    });
+});
 
 // ******************************************************************
 app.listen(PORT, () => {
