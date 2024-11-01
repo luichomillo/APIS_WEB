@@ -891,7 +891,7 @@ app.post('/api/guardar-avatar', (req, res) => {
 // *** CARGAR AVATAR ***
 app.get('/api/cargar-avatar', (req, res) => {
     const { user, ip_user } = req.query;
-    console.log("Cargar avatar: USER ", user, " IP ", ip_user);
+    console.log("Cargar avatar: USER ", user, " IP ", ip_user, "req.query ", req.query);
 	
     // Aquí deberías implementar la lógica para obtener el avatar del usuario
     const query = 'SELECT AVATAR FROM Usuarios WHERE USER = ? AND IP_USER = ?';
