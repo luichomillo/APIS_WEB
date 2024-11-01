@@ -628,8 +628,8 @@ const multer = require('multer');
 const upload = multer();
 
 app.post('/api/login-mysql', (req, res) => {
-    // res.setHeader('Access-Control-Allow-Credentials', 'true');
-    // res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
 	
     const { user, passw, IP } = req.body;
     console.log("user:", user, "passw:", passw, "IP:", IP);
@@ -648,9 +648,9 @@ app.post('/api/login-mysql', (req, res) => {
                 console.log("Inicia sesión para ID:", row.idUSER);
               
                 // Marcar al usuario como conectado
-                let fecha = new Date();
+                const fecha = new Date();
 		fecha.setHours(fechaHoy.getHours() - 3); // Ajustar a UTC-3
-                let formattedDate = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getDate().toString().padStart(2, '0')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
+                const formattedDate = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getDate().toString().padStart(2, '0')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
 
                 mysqlConnection.query(
                     `UPDATE Usuarios SET HABILITADO = 1, VIVO = 1, FECHA_VIVO = ?, IP_USER = ? WHERE idUSER = ?`,
