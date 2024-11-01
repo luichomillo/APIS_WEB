@@ -505,6 +505,34 @@ app.post('/api/logout-mysql', (req, res) => {
     );
 });
 
+// CERRAR SESION USUARIOS LUICHOTV *** MYSQL ***
+app.post('/api/cerrar-sesion', (req, res) => {
+    const { USER, IP } = req.body;
+
+    // Verificación de parámetros obligatorios
+    if (!USER || !IP) {
+        return res.status(400).json({ success: false, error: 'USER o IP no proporcionados' });
+    }
+
+    // Actualizar el estado del usuario en la base de datos
+    mysqlConnection.query(
+        'UPDATE Usuarios SET HABILITADO = 0 WHERE USER = ? AND IP_USER = ?',
+        [USER, IP],
+        (err, result) => {
+            if (err) {
+                console.error('Error al cerrar sesión:', err.message);
+                return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
+            }
+            if (result.affectedRows === 0) {
+                // Si no se actualizó ninguna fila, significa que no se encontró el usuario con esa IP
+                return res.status(404).json({ success: false, message: 'Usuario no encontrado o ya está desconectado' });
+            }
+            console.log(`${USER} con IP ${IP} cerró sesión.`);
+            res.json({ success: true, message: `Usuario ${USER} cerró sesión correctamente` });
+        }
+    );
+});
+
 // *** VERIFICAR ESTADO DE CONEXION DE LOS USUARIOS ***
 app.get('/api/verify-status-mysql', (req, res) => {
     // Consulta para obtener usuarios conectados o vivos cuya última conexión fue hace más de 15 minutos
@@ -513,7 +541,8 @@ app.get('/api/verify-status-mysql', (req, res) => {
         WHERE (VIVO = 1)
         AND TIMESTAMPDIFF(MINUTE, FECHA_VIVO, NOW()) >= 15
     `;
-
+	console.log("sql verify-status: ", sql);
+	
     mysqlConnection.query(sql, (err, rows) => {
         if (err) {
             return res.status(500).json({ error: err.message });
