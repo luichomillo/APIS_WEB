@@ -747,7 +747,7 @@ async function sendEmail(mail, password, sujeto) {
         service: 'gmail', // O el servicio de correo que uses
         auth: {
             user: 'lvallejos120@gmail.com', // Tu correo
-            pass: 'tu_contraseña' // La contraseña de tu correo o un token de aplicación
+            pass: 'ufnq zmjq kplp poue' // La contraseña de tu correo o un token de aplicación
         }
     });
 
