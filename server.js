@@ -849,6 +849,7 @@ app.post('/api/reset-password', (req, res) => {
 
 // **** MANTENER ACTIVO A RENDER *****
 const cron = require('node-cron');
+const axios = require('axios');
 
 // Configura el cron para hacer un ping cada 2 minutos
 cron.schedule('*/2 * * * *', async () => {
