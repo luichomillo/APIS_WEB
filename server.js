@@ -785,6 +785,7 @@ app.post('/api/reset-password', (req, res) => {
     console.log("Datos recibidos: USER ", USER, " MAIL ", MAIL);
 
     if (!USER || !MAIL) {
+	console.log('USER y MAIL son obligatorios');
         return res.status(400).json({ success: false, error: 'USER y MAIL son obligatorios' });
     }
 
@@ -799,6 +800,7 @@ app.post('/api/reset-password', (req, res) => {
 
         if (rows.length === 0) {
             // Si no existe el usuario y el correo, se solicita registrarse
+		console.log('Usuario no encontrado. Por favor, regístrese.');
             return res.status(404).json({ success: false, error: 'Usuario no encontrado. Por favor, regístrese.' });
         }
 
@@ -808,13 +810,13 @@ app.post('/api/reset-password', (req, res) => {
 
         // Actualizar la contraseña en la base de datos
         const updatePasswordQuery = 'UPDATE Usuarios SET PASSW = ? WHERE USER = ? AND MAIL = ?';
-        
+        console.log('update', USER, MAIL);
         mysqlConnection.query(updatePasswordQuery, [newPassword, USER, MAIL], (error) => {
             if (error) {
                 console.error("Error al actualizar la contraseña en la base de datos:", error);
                 return res.status(500).json({ success: false, error: 'Error al interactuar con la base de datos' });
             }
-
+		console.log('exito');
             sendEmail(MAIL, newPassword, 'Nueva contraseña generada'); // Envía la nueva contraseña por correo
             return res.json({ success: true, message: 'Nueva contraseña enviada al correo' });
         });
