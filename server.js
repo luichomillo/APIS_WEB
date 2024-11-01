@@ -649,7 +649,7 @@ app.post('/api/login-mysql', (req, res) => {
               
                 // Marcar al usuario como conectado
                 const fecha = new Date();
-		fecha.setHours(fechaHoy.getHours() - 3); // Ajustar a UTC-3
+		fecha.setHours(fecha.getHours() - 3); // Ajustar a UTC-3
                 const formattedDate = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getDate().toString().padStart(2, '0')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
 
                 mysqlConnection.query(
