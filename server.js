@@ -888,6 +888,29 @@ app.post('/api/guardar-avatar', (req, res) => {
     });
 });
 
+// *** CARGAR AVATAR ***
+app.get('/api/cargar-avatar', (req, res) => {
+    const { user, ip_user } = req.body;
+
+    // Aquí deberías implementar la lógica para obtener el avatar del usuario
+    const query = 'SELECT AVATAR FROM Usuarios WHERE USER = ? AND IP_USER = ?';
+    
+    mysqlConnection.query(query, [user, ip_user], (error, results) => {
+        if (error) {
+            console.error('Error al cargar el avatar:', error);
+            return res.status(500).json({ success: false, error: 'Error al cargar el avatar' });
+        }
+
+        if (results.length > 0) {
+            // Retorna el avatar del usuario
+            res.json({ success: true, avatar: results[0].AVATAR });
+        } else {
+            // Si no se encuentra el usuario o el avatar
+            res.json({ success: false, avatar: null });
+        }
+    });
+});
+
 // ******************************************************************
 app.listen(PORT, () => {
     console.log(`Servidor escuchando en el puerto ${PORT}`);
