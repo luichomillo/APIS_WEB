@@ -683,50 +683,49 @@ app.post('/api/register', (req, res) => {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     const { USER, MAIL, IP } = req.body;
-    // console.log("Datos recibidos: USER ", USER, " MAIL ", MAIL, " IP ", IP);
-    	
+
     if (!USER || !MAIL || !IP) {
         return res.status(400).json({ success: false, message: 'USER, MAIL e IP son obligatorios' });
     }
 
     // Generar una contraseña aleatoria de 6 números
     const password = Math.floor(100000 + Math.random() * 900000).toString();
-    // console.log("Contraseña generada: ", password);
     const textoMail = `Ingreso a la cuenta de LuichoTV -> https://luichomillo.freeddns.org/LuichoTV.html
-	Usuario: ${USER}
-	Contraseña: ${password}`;
-	    
+    Usuario: ${USER}
+    Contraseña: ${password}`;
+    
     // Crear la fecha y hora actuales
     const fechaHoy = new Date();
     fechaHoy.setHours(fechaHoy.getHours() - 3); // Ajustar a UTC-3
-    const fechaVivo = fechaHoy.toISOString().slice(0, 19).replace('T', ' '); // Formato 'YYYY-MM-DD HH:MM:SS'
-
-    // Verificar si el correo ya existe
-    const checkEmailQuery = 'SELECT * FROM Usuarios WHERE MAIL = ?';
-    mysqlConnection.query(checkEmailQuery, [MAIL], (error, rows) => {
+    const fechaVivo = fechaHoy.toISOString().slice(0, 19).replace('T', ' ');
+    console.log(fechaVivo);
+	
+    // Verificar si ya existe un usuario con el mismo MAIL o con la misma combinación de USER e IP_USER
+    const checkUserQuery = 'SELECT * FROM Usuarios WHERE MAIL = ? OR (USER = ? AND IP_USER = ?)';
+    mysqlConnection.query(checkUserQuery, [MAIL, USER, IP], (error, rows) => {
         if (error) {
-            console.log("Error al verificar el correo en la base de datos:", error, "mail: ", MAIL);
-            return res.status(500).json({ success: false, message: 'Error al verificar el correo en la base de datos' });
+            console.log("Error al verificar usuario en la base de datos:", error);
+            return res.status(500).json({ success: false, message: 'Error al verificar usuario en la base de datos' });
         }
 
         if (rows.length > 0) {
-            // Si el correo ya existe, actualizar el registro
+            // Si el usuario ya existe (por MAIL o combinación de USER e IP_USER), actualizar el registro
             const updateQuery = `
                 UPDATE Usuarios 
-                SET USER = ?, PASSW = ?, IP_USER = ?, CATEGORIA = 'INVITADO', HABILITADO = 1, VIVO = 1, FECHA_VIVO = ?
-                WHERE MAIL = ?
+                SET USER = ?, PASSW = ?, MAIL = ?, IP_USER = ?, CATEGORIA = 'INVITADO', HABILITADO = 1, VIVO = 1, FECHA_VIVO = ?
+                WHERE MAIL = ? OR (USER = ? AND IP_USER = ?)
             `;
-            mysqlConnection.query(updateQuery, [USER, password, IP, fechaVivo, MAIL], (error) => {
+            mysqlConnection.query(updateQuery, [USER, password, MAIL, IP, fechaVivo, MAIL, USER, IP], (error) => {
                 if (error) {
                     console.log("Error al actualizar usuario en la base de datos:", error);
                     return res.status(500).json({ success: false, message: 'Error al actualizar usuario en la base de datos' });
                 }
 
-                sendEmail(MAIL, password, 'Usuario registrado exitosamente', textoMail); // Envía la contraseña por correo
-                return res.json({ success: true, message: 'Usuario actualizado exitosamente. Contraseña enviada al mail: ' + MAIL  });
+                sendEmail(MAIL, password, 'Usuario actualizado exitosamente', textoMail); // Envía la contraseña por correo
+                return res.json({ success: true, message: 'Usuario actualizado exitosamente. Contraseña enviada al mail: ' + MAIL });
             });
         } else {
-            // Si el correo no existe, insertar un nuevo registro
+            // Insertar un nuevo registro si no existe
             const insertQuery = `
                 INSERT INTO Usuarios (USER, PASSW, MAIL, IP_USER, CATEGORIA, HABILITADO, VIVO, FECHA_VIVO) 
                 VALUES (?, ?, ?, ?, 'INVITADO', 1, 1, ?)
