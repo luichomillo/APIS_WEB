@@ -681,55 +681,46 @@ app.post('/api/register', async (req, res) => {
     if (!USER || !MAIL || !IP) {
         return res.status(400).json({ success: false, error: 'USER, MAIL e IP son obligatorios' });
     }
-    
-    // Crear la fecha y hora actuales
-    const fechaHoy = new Date();
-    fechaHoy.setHours(fechaHoy.getHours() - 3); // Ajustar a UTC-3
-    const fechaVivo = fechaHoy.toISOString().slice(0, 19).replace('T', ' '); // Formato 'YYYY-MM-DD HH:MM:SS'
 
     // Generar una contraseña aleatoria de 6 números
     const password = Math.floor(100000 + Math.random() * 900000).toString(); // Genera un número aleatorio de 6 dígitos
     console.log("Contraseña generada: ", password);
 
+    // Crear la fecha y hora actuales
+    const fechaHoy = new Date();
+    fechaHoy.setHours(fechaHoy.getHours() - 3); // Ajustar a UTC-3
+    const fechaVivo = fechaHoy.toISOString().slice(0, 19).replace('T', ' '); // Formato 'YYYY-MM-DD HH:MM:SS'
+
     // Verificar si el correo ya existe
     const checkEmailQuery = 'SELECT * FROM Usuarios WHERE MAIL = ?';
-    mysqlConnection.query(checkEmailQuery, [MAIL], async (err, result) => {
-        if (err) {
-            console.error('Error al verificar el correo:', err.message);
-            return res.status(500).json({ success: false, error: 'Error al verificar la base de datos' });
-        }
-
-        if (result.length > 0) {
+    
+    try {
+        const [rows] = await mysqlConnection.promise().query(checkEmailQuery, [MAIL]); // Usar promesas para la consulta
+        
+        if (rows.length > 0) {
             // Si el correo ya existe, actualizamos el registro
             const updateQuery = `
                 UPDATE Usuarios 
                 SET USER = ?, PASSW = ?, IP_USER = ?, CATEGORIA = 'INVITADO', HABILITADO = 1, VIVO = 1, FECHA_VIVO = ?
                 WHERE MAIL = ?
             `;
-            mysqlConnection.query(updateQuery, [USER, password, IP, fechaVivo, MAIL], (err) => {
-                if (err) {
-                    console.error('Error al actualizar el usuario:', err.message);
-                    return res.status(500).json({ success: false, error: 'Error al actualizar la base de datos' });
-                }
-                await sendEmail(MAIL, password); // Envía la contraseña por correo
-                return res.json({ success: true, message: 'Usuario actualizado exitosamente' });
-            });
+            await mysqlConnection.promise().query(updateQuery, [USER, password, IP, fechaVivo, MAIL]); // Usar promesas para la actualización
+            await sendEmail(MAIL, password); // Envía la contraseña por correo
+            return res.json({ success: true, message: 'Usuario actualizado exitosamente' });
         } else {
             // Si el correo no existe, insertamos un nuevo registro
             const insertQuery = `
                 INSERT INTO Usuarios (USER, PASSW, MAIL, IP_USER, CATEGORIA, HABILITADO, VIVO, FECHA_VIVO) 
                 VALUES (?, ?, ?, ?, 'INVITADO', 1, 1, ?)
             `;
-            mysqlConnection.query(insertQuery, [USER, password, MAIL, IP, fechaVivo], (err) => {
-                if (err) {
-                    console.error('Error al insertar el usuario:', err.message);
-                    return res.status(500).json({ success: false, error: 'Error al insertar en la base de datos' });
-                }
-                await sendEmail(MAIL, password); // Envía la contraseña por correo
-                return res.json({ success: true, message: 'Usuario registrado exitosamente' });
-            });
+            await mysqlConnection.promise().query(insertQuery, [USER, password, MAIL, IP, fechaVivo]); // Usar promesas para la inserción
+            await sendEmail(MAIL, password); // Envía la contraseña por correo
+            return res.json({ success: true, message: 'Usuario registrado exitosamente' });
         }
-    });
+    } catch (err) {
+        console.error('Error al interactuar con la base de datos:', err.message);
+        return res.status(500).json({ success: false, error: 'Error al interactuar con la base de datos' });
+    }
 });
 
 // Función para enviar el correo
