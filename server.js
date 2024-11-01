@@ -803,7 +803,7 @@ app.post('/api/reset-password', (req, res) => {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     const { USER, MAIL } = req.body;
-    console.log("Datos recibidos: USER ", USER, " MAIL ", MAIL);
+    console.log("Restablecer passw: USER ", USER, " MAIL ", MAIL);
 
     if (!USER || !MAIL) {
 	console.log('USER y MAIL son obligatorios');
@@ -891,10 +891,12 @@ app.post('/api/guardar-avatar', (req, res) => {
 // *** CARGAR AVATAR ***
 app.get('/api/cargar-avatar', (req, res) => {
     const { user, ip_user } = req.body;
-
+    console.log("Cargar avatar: USER ", user, " IP ", ip_user);
+	
     // Aquí deberías implementar la lógica para obtener el avatar del usuario
     const query = 'SELECT AVATAR FROM Usuarios WHERE USER = ? AND IP_USER = ?';
-    
+
+    console.log("query: ", query)
     mysqlConnection.query(query, [user, ip_user], (error, results) => {
         if (error) {
             console.error('Error al cargar el avatar:', error);
