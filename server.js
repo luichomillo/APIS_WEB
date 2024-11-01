@@ -727,7 +727,7 @@ app.post('/api/register', (req, res) => {
     const fechaHoy = new Date();
     fechaHoy.setHours(fechaHoy.getHours() - 3); // Ajustar a UTC-3
     const fechaVivo = fechaHoy.toISOString().slice(0, 19).replace('T', ' ');
-    console.log(fechaVivo);
+    console.log("Registro de Usuario: ", fechaVivo);
 	
     // Verificar si ya existe un usuario con el mismo MAIL o con la misma combinación de USER e IP_USER
     const checkUserQuery = 'SELECT * FROM Usuarios WHERE MAIL = ? OR (USER = ? AND IP_USER = ?)';
@@ -741,7 +741,7 @@ app.post('/api/register', (req, res) => {
             // Si el usuario ya existe (por MAIL o combinación de USER e IP_USER), actualizar el registro
             const updateQuery = `
                 UPDATE Usuarios 
-                SET USER = ?, PASSW = ?, MAIL = ?, IP_USER = ?, CATEGORIA = 'INVITADO', HABILITADO = 1, VIVO = 1, FECHA_VIVO = ?
+                SET USER = ?, PASSW = ?, MAIL = ?, IP_USER = ?, HABILITADO = 1, VIVO = 1, FECHA_VIVO = ?
                 WHERE MAIL = ? OR (USER = ? AND IP_USER = ?)
             `;
             mysqlConnection.query(updateQuery, [USER, password, MAIL, IP, fechaVivo, MAIL, USER, IP], (error) => {
@@ -805,8 +805,8 @@ app.post('/api/reset-password', (req, res) => {
     if (!USER || !MAIL) {
 	console.log('USER y MAIL son obligatorios');
         return res.status(400).json({ success: false, error: 'USER y MAIL son obligatorios' });
-    }
-
+    }   
+	
     // Verificar si el usuario y el correo coinciden
     const checkUserEmailQuery = 'SELECT * FROM Usuarios WHERE USER = ? AND MAIL = ?';
     
