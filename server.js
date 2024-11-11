@@ -915,7 +915,7 @@ app.get('/api/cargar-avatar', (req, res) => {
 
 // ****** Endpoint para obtener el árbol genealógico URTURI ********
 app.get('/api/arbol-genealogico', (req, res) => {
-    const query = 'SELECT * FROM URTURI';
+    const query = 'SELECT * FROM URTURI ORDER BY nivel ASC, fecha_nacimiento ASC';
     mysqlConnection.query(query, (err, results) => {
         if (err) throw err;
         res.json(results);
