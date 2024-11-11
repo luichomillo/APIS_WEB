@@ -696,7 +696,7 @@ app.get('/api/verificarusuario', (req, res) => {
             const row = results[0]; // Tomar el primer resultado
             if (row.HABILITADO === 1 && row.VIVO === 1) {
                 console.log("Usuario con IP ", IP, " está habilitado y conectado");
-                return res.json({ loggedIn: true });
+                return res.json({ loggedIn: true, usuario: row.USER });
             } else {
                 console.log("Usuario con IP ", IP, " no está habilitado o conectado");
                 return res.json({ loggedIn: false });
