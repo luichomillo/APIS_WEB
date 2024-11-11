@@ -688,22 +688,22 @@ app.get('/api/verificarusuario', (req, res) => {
     mysqlConnection.query('SELECT HABILITADO, VIVO FROM Usuarios WHERE IP_User = ?', [IP], (err, results) => {
         if (err) {
             console.error("Error al consultar la base de datos:", err.message);
-            return res.json({ loggedIn: false });
+            return res.json({ loggedIn: false, Nom_Usuario: " " });
         }
 
         // Verificar si el usuario está habilitado y vivo
         if (results.length > 0) {
             const row = results[0]; // Tomar el primer resultado
             if (row.HABILITADO === 1 && row.VIVO === 1) {
-                console.log("Usuario con IP ", IP, " está habilitado y conectado");
-                return res.json({ loggedIn: true, usuario: row.USER });
+                console.log("Usuario ", row.USER, " está habilitado y conectado. IP ", IP);
+                return res.json({ loggedIn: true, Nom_Usuario: row.USER });
             } else {
                 console.log("Usuario con IP ", IP, " no está habilitado o conectado");
-                return res.json({ loggedIn: false });
+                return res.json({ loggedIn: false, Nom_Usuario: " " });
             }
         } else {
             console.log("No se encontró ningún usuario con la IP ", IP);
-            return res.json({ loggedIn: false });
+            return res.json({ loggedIn: false, Nom_Usuario: " " });
         }
     });
 });
