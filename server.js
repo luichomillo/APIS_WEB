@@ -685,7 +685,7 @@ app.get('/api/verificarusuario', (req, res) => {
     }
 
     // Consulta a la base de datos para verificar si el usuario está habilitado y vivo
-    mysqlConnection.query('SELECT * FROM Usuarios WHERE IP_User = ?', [IP], (err, results) => {
+    mysqlConnection.query('SELECT USER, HABILITADO, VIVO FROM Usuarios WHERE IP_User = ?', [IP], (err, results) => {
         if (err) {
             console.error("Error al consultar la base de datos:", err.message);
             return res.json({ loggedIn: false, Nom_Usuario: " " });
@@ -696,7 +696,7 @@ app.get('/api/verificarusuario', (req, res) => {
             const row = results[0]; // Tomar el primer resultado
             if (row.HABILITADO === 1 && row.VIVO === 1) {
                 console.log("Usuario ", row.USER, " está habilitado y conectado. IP ", IP);
-                return res.json({ loggedIn: true, Nom_Usuario: row.USER, ID_Usuario: row.idUSER });
+                return res.json({ loggedIn: true, Nom_Usuario: row.USER });
             } else {
                 console.log("Usuario con IP ", IP, " no está habilitado o conectado");
                 return res.json({ loggedIn: false, Nom_Usuario: " " });
@@ -913,39 +913,6 @@ app.get('/api/cargar-avatar', (req, res) => {
     });
 });
 
-// ***** GUARDAR CAPITULO SERIE *********
-app.post('/api/guardarUltimoCapitulo', (req, res) => {
-    const { IP, USER, TIT, TEMP, CAP } = req.body;
-
-    // Primero busco si la serie ya tiene alguna entrada para este usuario
-    const query = 'SELECT * FROM SERIES WHERE USER = ? AND IP_USER = ? AND NOMBRE_SERIE = ?';
-    mysqlConnection.query(query, [USER, IP, TIT], (error, results) => {
-        if (error) {
-            return res.status(500).json({ error: 'Error en la consulta' });
-        }
-        if (results.length > 0) {
-            // Si hay resultados, hago un UPDATE
-            const updateQuery = 'UPDATE SERIES SET TEMPORADA = ?, CAPITULO = ? WHERE USER = ? AND IP_USER = ? AND NOMBRE_SERIE = ?';
-            mysqlConnection.query(updateQuery, [TEMP, CAP, USER, IP, TIT], (updateError) => {
-                if (updateError) {
-                    return res.status(500).json({ error: 'Error al actualizar la serie' });
-                }
-                res.status(200).json({ message: 'Serie actualizada correctamente' });
-            });
-        } else {
-            // Si no hay resultados, hago un INSERT
-            const insertQuery = 'INSERT INTO SERIES (USER, IP_USER, NOMBRE_SERIE, TEMPORADA, CAPITULO) VALUES (?, ?, ?, ?, ?)';
-            mysqlConnection.query(insertQuery, [USER, IP, TIT, TEMP, CAP], (insertError) => {
-                if (insertError) {
-                    return res.status(500).json({ error: 'Error al insertar la serie' });
-                }
-                res.status(200).json({ message: 'Serie guardada correctamente' });
-            });
-        }
-    });
-});
-
-// ********************** URTURI **************************
 // ****** Endpoint para obtener el árbol genealógico URTURI ********
 app.get('/api/arbol-genealogico', (req, res) => {
     const query = 'SELECT * FROM URTURI ORDER BY nivel ASC, fecha_nacimiento ASC';
