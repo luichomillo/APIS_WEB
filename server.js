@@ -945,7 +945,6 @@ app.post('/api/guardarUltimoCapitulo', (req, res) => {
     });
 });
 
-
 // ********************** URTURI **************************
 // ****** Endpoint para obtener el árbol genealógico URTURI ********
 app.get('/api/arbol-genealogico', (req, res) => {
