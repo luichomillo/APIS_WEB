@@ -266,7 +266,7 @@ const mysql = require('mysql');
 const mysqlConnection = mysql.createConnection({
     host: 'sql312.infinityfree.com',
     user: 'if0_37279537',
-    password: 'xIgnfz9vvM ',
+    password: 'xIgnfz9vvM',
     database: 'if0_37279537_luichomillo',
     port: 3306,
     connectTimeout: 10000 // Timeout de conexión de 10 segundos
