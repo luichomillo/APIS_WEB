@@ -265,8 +265,10 @@ const mysql = require('mysql');
 
 const mysqlConnection = mysql.createConnection({
     host: 'luichomillo.freeddns.org',
-    user: 'luichomillo',
-    password: 'Kuffour_70',
+    //user: 'luichomillo',
+    //password: 'Kuffour_70',
+    user: 'root',
+    password: '',
     database: 'luichomillo',
     port: 3306,
     connectTimeout: 10000 // Timeout de conexión de 10 segundos
